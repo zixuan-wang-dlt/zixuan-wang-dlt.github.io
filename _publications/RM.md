@@ -6,7 +6,7 @@ excerpt: ''
 venue: 'arXiv:2503.15477'
 date: 2025-03-19
 paperurl: 'https://arxiv.org/abs/2503.15477'
-citation: 'Wang, Z., Wei, S., Hsu, D., & Lee, J. D. (2024). Transformers provably learn sparse token selection while fully-connected nets cannot. arXiv preprint arXiv:2406.06893.'
+citation: 'Razin, N., Wang, Z., Strauss, H., Wei, S., Lee, J. D., & Arora, S. (2025). What Makes a Reward Model a Good Teacher? An Optimization Perspective. arXiv preprint arXiv:2503.15477.'
 ---
 Noam Razin, Zixuan Wang, Hubert Strauss, Stanley Wei, Jason D. Lee, Sanjeev Arora
 

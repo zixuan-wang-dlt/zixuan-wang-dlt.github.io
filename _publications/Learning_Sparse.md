@@ -4,7 +4,7 @@ collection: publications
 permalink: /publication/Learning_Sparse
 excerpt: ''
 venue: 'arXiv:2410.23438'
-date: 2024-06-11
+date: 2024-10-11
 paperurl: 'https://arxiv.org/pdf/2410.23438'
 citation: 'Ren, Y., Wang, Z., & Lee, J. D. (2024). Learning and Transferring Sparse Contextual Bigrams with Linear Transformers. arXiv preprint arXiv:2410.23438.'
 ---
