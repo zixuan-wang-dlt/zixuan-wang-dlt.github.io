@@ -1,7 +1,7 @@
 ---
 title: "Understanding Edge-of-Stability Training Dynamics With a Minimalist Example"
 collection: publications
-permalink: /publication/2022-11-17-paper-title-number-2
+permalink: /publication/Understanding_EoS
 excerpt: ''
 venue: 'arXiv:2210.03294'
 date: 2022-11-17

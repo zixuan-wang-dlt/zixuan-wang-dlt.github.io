@@ -19,8 +19,8 @@ You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive
 
 ### Selected Publications
 
-- Learning Compositional Functions with Transformers from Easy-to-Hard Data\
-    **Zixuan Wang$^*$**, Eshaan Nichani$^*$, A. Bietti, A. Damian, Daniel Hsu, Jason Lee, Denny Wu
+- Learning Compositional Functions with Transformers from Easy-to-Hard Data \
+    **Zixuan Wang$^∗$**, Eshaan Nichani$^∗$, A. Bietti, A. Damian, Daniel Hsu, Jason Lee, Denny Wu
 
 - <a href="https://arxiv.org/abs/2503.15477">What Makes a Reward Model a Good Teacher? An Optimization Perspective</a>\
     Noam Razin, **Zixuan Wang**, Hubert Strauss, Stanley Wei, Jason D. Lee, Sanjeev Arora
@@ -34,5 +34,5 @@ You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive
 - <a href="https://arxiv.org/abs/2210.03294">Understanding Edge-of-Stability Training Dynamics With a Minimalist Example</a> (ICLR 2023)\
     Xingyu Zhu$^∗$, **Zixuan Wang$^*$**, Xiang Wang, Mo Zhou, Rong Ge.
 
-- <a href="https://arxiv.org/abs/2207.12678">Analyzing Sharpness along GD Trajectory: Progressive Sharpening and Edge of Stability</a> (NeurIPS 2022)\ 
+- <a href="https://arxiv.org/abs/2207.12678">Analyzing Sharpness along GD Trajectory: Progressive Sharpening and Edge of Stability</a> (NeurIPS 2022)\
     Zhouzi Li$^∗$, **Zixuan Wang$^*$**, Jian Li.
