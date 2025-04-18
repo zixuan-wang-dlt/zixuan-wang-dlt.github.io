@@ -15,7 +15,24 @@ both theoretical and empirical explorations to advance the frontiers of deep lea
 
 I did my undergraduate in Institutes for Interdisciplinary Information Sciences (IIIS), Tsinghua University (Known as **"Yao class"**).
 
-You can contact me at wangzx (at) princeton (dot) edu.
+You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing">CV</a> is here!
 
+### Selected Publications
 
-### My <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing">CV</a>.
+- Learning Compositional Functions with Transformers from Easy-to-Hard Data (In preparation)
+    **Zixuan Wang$^*$**, Eshaan Nichani∗, Alberto Bietti, Alex Damian, Daniel Hsu, Jason Lee, Denny Wu
+
+- What Makes a Reward Model a Good Teacher? An Optimization Perspective (Submitted)
+    Noam Razin, Zixuan Wang, Hubert Strauss, Stanley Wei, Jason D. Lee, Sanjeev Arora
+
+- Transformers Learn to Implement Multi-step Gradient Descent with Chain of Thought (ICLR 2025, Spotlight)
+    Jianhao Huang∗, **Zixuan Wang$^*$**, Jason D. Lee (Mentored Jianhao in this project)
+
+- Transformers Provably Learn Sparse Token Selection While Fully-Connected Nets Cannot (ICML 2024)
+    **Zixuan Wang**, Ruocheng Wei, Daniel Hsu, Jason D. Lee
+
+- Understanding Edge-of-Stability Training Dynamics With a Minimalist Example (ICLR 2023)
+    Xingyu Zhu∗, **Zixuan Wang$^*$**, Xiang Wang, Mo Zhou, Rong Ge.
+
+- Analyzing Sharpness along GD Trajectory: Progressive Sharpening and Edge of Stability (NeurIPS 2022)
+    Zhouzi Li∗, **Zixuan Wang$^*$**, Jian Li.
