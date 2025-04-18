@@ -1,6 +1,6 @@
 ---
 permalink: /
-title: "Welcome to Zixuan's Homepage"
+title: "About Me"
 excerpt: "About me"
 author_profile: true
 redirect_from: 
@@ -8,17 +8,13 @@ redirect_from:
   - /about.html
 ---
 
-Hi! I am Zixuan Wang.  I am an undergraduate in Institutes for Interdisciplinary Information Sciences (IIIS), Tsinghua University.
+Hi! I am a second-year Ph.D. student in <a href="https://ece.princeton.edu/">Electrical and Computer Engineering</a> at Princeton University. I am fortunate to be advised by <a href="https://jasondlee88.github.io/">Prof. Jason D. Lee</a>.
+My research interests broadly lie in understanding the foundations of LLMs and deep learning, as well as leveraging
+both theoretical and empirical explorations to advance the frontiers of deep learning and language modeling.
+
+I did my undergraduate in Institutes for Interdisciplinary Information Sciences (IIIS), Tsinghua University (Known as **"Yao class"**).
+
+You can contact me at wangzx (at) princeton (dot) edu.
 
 
-
-My research interests lie in **theoretical machine learning** and **non-convex optimization.** I am searching for a Ph.D. position in 2023 Fall. I am eager to explore the mystery of deep learning in aspects of optimization and generalization, and actively search for theoretical explanations to it.
-
-### Education
-
-- An undergraduate in **"Yao class"**, a special CS pilot class established by Turing Award Laureate, **Prof. Andrew Chi-Chih Yao.**
-- Visiting student in 2022 Spring, CS department, Duke University.
-
-### My CV
-
-You can download my <a href="https://drive.google.com/file/d/1JVimZzK3Q_BApzcfQv63rKYJb-VkL8kn/view?usp=sharing">CV</a> here.
+### My <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing">CV</a>.
