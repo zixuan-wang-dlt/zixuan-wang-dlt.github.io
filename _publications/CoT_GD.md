@@ -1,0 +1,13 @@
+---
+title: "Transformers Learn to Implement Multi-step Gradient Descent with Chain of Thought"
+collection: publications
+permalink: /publication/CoT_GD
+excerpt: ''
+venue: 'arXiv:2502.21212'
+date: 2025-02-28
+paperurl: 'https://arxiv.org/pdf/2502.21212'
+citation: 'Huang, J., Wang, Z., & Lee, J. D. (2025). Transformers Learn to Implement Multi-step Gradient Descent with Chain of Thought. arXiv preprint arXiv:2502.21212.'
+---
+Jianhao Huang, Zixuan Wang, Jason D. Lee
+
+**Abstract:** Chain of Thought (CoT) prompting has been shown to significantly improve the performance of large language models (LLMs), particularly in arithmetic and reasoning tasks, by instructing the model to produce intermediate reasoning steps. Despite the remarkable empirical success of CoT and its theoretical advantages in enhancing expressivity, the mechanisms underlying CoT training remain largely unexplored. In this paper, we study the training dynamics of transformers over a CoT objective on an in-context weight prediction task for linear regression. We prove that while a one-layer linear transformer without CoT can only implement a single step of gradient descent (GD) and fails to recover the ground-truth weight vector, a transformer with CoT prompting can learn to perform multi-step GD autoregressively, achieving near-exact recovery. Furthermore, we show that the trained transformer effectively generalizes on the unseen data. With our technique, we also show that looped transformers significantly improve final performance compared to transformers without looping in the in-context learning of linear regression. Empirically, we demonstrate that CoT prompting yields substantial performance improvements.

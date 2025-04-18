@@ -1,7 +1,7 @@
 ---
 title: "Transformers Provably Learn Sparse Token Selection While Fully-Connected Nets Cannot"
 collection: publications
-permalink: /publication/2022-11-17-paper-title-number-2
+permalink: /publication/sparse_token
 excerpt: ''
 venue: 'arXiv:2406.06893'
 date: 2024-06-11
