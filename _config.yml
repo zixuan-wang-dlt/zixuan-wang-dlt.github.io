@@ -11,9 +11,9 @@ title                    : "Zixuan Wang's Home"
 title_separator          : "-"
 name                     : &name "Zixuan Wang"
 description              : &description "I am currently an undergraduate student in IIIS, Tsinghua University. "
-url                      : https://wangzx19.github.io # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
+url                      : https://zixuan-wang-dlt.github.io # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : "" # the subpath of your site, e.g. "/blog"
-repository               : "wangzx19/wangzx19.github.io"
+repository               : "zixuan-wang-dlt/zixuan-wang-dlt.github.io"
 teaser                   :  # filename of teaser fallback teaser image placed in /images/, .e.g. "500x300.png"
 breadcrumbs              : false # true, false (default)
 words_per_minute         : 160
