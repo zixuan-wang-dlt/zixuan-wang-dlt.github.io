@@ -20,19 +20,19 @@ You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive
 ### Selected Publications
 
 - Learning Compositional Functions with Transformers from Easy-to-Hard Data\
-    &emsp; **Zixuan Wang$^*$**, Eshaan Nichani∗, Alberto Bietti, Alex Damian, Daniel Hsu, Jason Lee, Denny Wu
+    **Zixuan Wang$^*$**, Eshaan Nichani$^*$, A. Bietti, A. Damian, Daniel Hsu, Jason Lee, Denny Wu
 
 - <a href="https://arxiv.org/abs/2503.15477">What Makes a Reward Model a Good Teacher? An Optimization Perspective</a>\
-    &emsp; Noam Razin, **Zixuan Wang**, Hubert Strauss, Stanley Wei, Jason D. Lee, Sanjeev Arora
+    Noam Razin, **Zixuan Wang**, Hubert Strauss, Stanley Wei, Jason D. Lee, Sanjeev Arora
 
 - <a href="https://arxiv.org/abs/2502.21212">Transformers Learn to Implement Multi-step Gradient Descent with Chain of Thought</a> (ICLR 2025, Spotlight)\  
-    &emsp; Jianhao Huang∗, **Zixuan Wang$^*$**, Jason D. Lee (Mentored Jianhao in this project)
+    Jianhao Huang∗, **Zixuan Wang$^*$**, Jason D. Lee (Mentored Jianhao in this project)
 
-- <a href="https://arxiv.org/abs/2406.06893">Transformers Provably Learn Sparse Token Selection While Fully-Connected Nets Cannot</a> (ICML 2024) \  
-    &emsp; **Zixuan Wang**, Ruocheng Wei, Daniel Hsu, Jason D. Lee
+- <a href="https://arxiv.org/abs/2406.06893">Transformers Provably Learn Sparse Token Selection While Fully-Connected Nets Cannot</a> (ICML 2024)\  
+    **Zixuan Wang**, Ruocheng Wei, Daniel Hsu, Jason D. Lee
 
-- <a href="https://arxiv.org/abs/2210.03294">Understanding Edge-of-Stability Training Dynamics With a Minimalist Example</a> (ICLR 2023) \  
-    &emsp; Xingyu Zhu$^∗$, **Zixuan Wang$^*$**, Xiang Wang, Mo Zhou, Rong Ge.
+- <a href="https://arxiv.org/abs/2210.03294">Understanding Edge-of-Stability Training Dynamics With a Minimalist Example</a> (ICLR 2023)\  
+    Xingyu Zhu$^∗$, **Zixuan Wang$^*$**, Xiang Wang, Mo Zhou, Rong Ge.
 
-- <a href="https://arxiv.org/abs/2207.12678">Analyzing Sharpness along GD Trajectory: Progressive Sharpening and Edge of Stability</a> (NeurIPS 2022) \  
-    &emsp; Zhouzi Li$^∗$, **Zixuan Wang$^*$**, Jian Li.
+- <a href="https://arxiv.org/abs/2207.12678">Analyzing Sharpness along GD Trajectory: Progressive Sharpening and Edge of Stability</a> (NeurIPS 2022)\  
+    Zhouzi Li$^∗$, **Zixuan Wang$^*$**, Jian Li.
