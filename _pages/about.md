@@ -19,10 +19,10 @@ You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive
 
 ### Selected Publications
 
-- <a href="https://arxiv.org/abs/2510.25741">Scaling Latent Reasoning via Looped Language Models \
+- <a href="https://arxiv.org/abs/2510.25741">Scaling Latent Reasoning via Looped Language Models </a>\
 Rui-Jie Zhu$^*$, **Zixuan Wang$^*$**, Kai Hua$^*$, Tianyu Zhang$^*$, et al.
 
-- <a href="https://arxiv.org/abs/2505.23683">Learning Compositional Functions with Transformers from Easy-to-Hard Data \
+- <a href="https://arxiv.org/abs/2505.23683">Learning Compositional Functions with Transformers from Easy-to-Hard Data</a> (COLT 2025)\
     **Zixuan Wang$^∗$**, Eshaan Nichani$^∗$, A. Bietti, A. Damian, Daniel Hsu, Jason Lee, Denny Wu
 
 - <a href="https://arxiv.org/abs/2503.15477">What Makes a Reward Model a Good Teacher? An Optimization Perspective</a> (NeurIPS 2025, Spotlight)\
