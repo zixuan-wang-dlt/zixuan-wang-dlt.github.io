@@ -19,10 +19,13 @@ You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive
 
 ### Selected Publications
 
-- Learning Compositional Functions with Transformers from Easy-to-Hard Data \
+- <a href="https://arxiv.org/abs/2510.25741">Scaling Latent Reasoning via Looped Language Models \
+Rui-Jie Zhu$^*$, **Zixuan Wang$^*$**, Kai Hua$^*$, Tianyu Zhang$^*$, et al.
+
+- <a href="https://arxiv.org/abs/2505.23683">Learning Compositional Functions with Transformers from Easy-to-Hard Data \
     **Zixuan Wang$^∗$**, Eshaan Nichani$^∗$, A. Bietti, A. Damian, Daniel Hsu, Jason Lee, Denny Wu
 
-- <a href="https://arxiv.org/abs/2503.15477">What Makes a Reward Model a Good Teacher? An Optimization Perspective</a>\
+- <a href="https://arxiv.org/abs/2503.15477">What Makes a Reward Model a Good Teacher? An Optimization Perspective</a> (NeurIPS 2025, Spotlight)\
     Noam Razin, **Zixuan Wang**, Hubert Strauss, Stanley Wei, Jason D. Lee, Sanjeev Arora
 
 - <a href="https://arxiv.org/abs/2502.21212">Transformers Learn to Implement Multi-step Gradient Descent with Chain of Thought</a> (ICLR 2025, Spotlight)\
