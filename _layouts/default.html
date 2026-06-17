@@ -26,6 +26,28 @@ layout: compress
     </div>
 
     {% include scripts.html %}
+    <script>
+      (function() {
+        var toggle = document.querySelector('.theme-toggle');
+        if (!toggle) return;
+
+        function syncToggle() {
+          var isDark = document.documentElement.classList.contains('theme-dark');
+          toggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+          toggle.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+          toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+
+        syncToggle();
+        toggle.addEventListener('click', function() {
+          document.documentElement.classList.toggle('theme-dark');
+          try {
+            localStorage.setItem('theme', document.documentElement.classList.contains('theme-dark') ? 'dark' : 'light');
+          } catch (error) {}
+          syncToggle();
+        });
+      })();
+    </script>
 
   </body>
 </html>

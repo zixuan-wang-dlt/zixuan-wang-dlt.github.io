@@ -11,7 +11,7 @@ redirect_from:
 
 <div class="home-hero">
 <div class="home-hero__text">
-<h1 class="home-name">Zixuan (子轩) Wang</h1>
+<h1 class="home-name">Zixuan Wang</h1>
 
 <p class="home-intro">Hi! I am <strong>Zixuan (子轩) Wang</strong>, a second-year Ph.D. student in <a href="https://ece.princeton.edu/">Electrical and Computer Engineering</a> at Princeton University. I am fortunate to be advised by <a href="https://jasondlee88.github.io/">Prof. Jason D. Lee</a>.</p>
 
