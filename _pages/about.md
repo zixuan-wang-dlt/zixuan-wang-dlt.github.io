@@ -34,7 +34,7 @@ You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive
   <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing" aria-label="CV" title="CV"><i class="fas fa-file-alt" aria-hidden="true"></i></a>
 </div>
 
-## <a class="section-link" href="/blog/">latest posts</a>
+## <a class="section-link" href="/blog/">Latest Posts</a>
 
 <ul class="post-list">
 {% assign shown_posts = 0 %}
@@ -47,13 +47,18 @@ You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive
   {% endunless %}
 {% endfor %}
 {% if shown_posts == 0 %}
-  <li><span class="post-date">soon</span><span>New posts will appear here.</span></li>
+  <li><span class="post-date">Soon</span><span>New posts will appear here.</span></li>
 {% endif %}
 </ul>
 
-## <a class="section-link" href="/publications/">selected publications</a>
+## <a class="section-link" href="/publications/">Selected Publications</a>
 
 <ol class="publication-list">
+  <li>
+    <span class="pub-title"><a href="https://arxiv.org/abs/2604.22951">The Power of Power Law: Asymmetry Enables Compositional Reasoning</a></span>
+    <div class="pub-authors"><strong>Zixuan Wang</strong>, Xingyu Dang, Jason D. Lee, Kaifeng Lyu</div>
+    <div class="pub-meta">ICML, 2026 Spotlight</div>
+  </li>
   <li>
     <span class="pub-title"><a href="https://arxiv.org/abs/2510.25741">Scaling Latent Reasoning via Looped Language Models</a></span>
     <div class="pub-authors">Rui-Jie Zhu*, <strong>Zixuan Wang*</strong>, Kai Hua*, Tianyu Zhang*, et al.</div>
@@ -72,16 +77,6 @@ You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive
     <span class="pub-title"><a href="https://arxiv.org/abs/2502.21212">Transformers Learn to Implement Multi-step Gradient Descent with Chain of Thought</a></span>
     <div class="pub-authors">Jianhao Huang*, <strong>Zixuan Wang*</strong>, Jason D. Lee</div>
     <div class="pub-meta">ICLR, 2025 Spotlight</div>
-  </li>
-  <li>
-    <span class="pub-title"><a href="https://arxiv.org/abs/2406.06893">Transformers Provably Learn Sparse Token Selection While Fully-Connected Nets Cannot</a></span>
-    <div class="pub-authors"><strong>Zixuan Wang</strong>, Ruocheng Wei, Daniel Hsu, Jason D. Lee</div>
-    <div class="pub-meta">ICML, 2024</div>
-  </li>
-  <li>
-    <span class="pub-title"><a href="https://arxiv.org/abs/2210.03294">Understanding Edge-of-Stability Training Dynamics With a Minimalist Example</a></span>
-    <div class="pub-authors">Xingyu Zhu*, <strong>Zixuan Wang*</strong>, Xiang Wang, Mo Zhou, Rong Ge</div>
-    <div class="pub-meta">ICLR, 2023</div>
   </li>
   <li>
     <span class="pub-title"><a href="https://arxiv.org/abs/2207.12678">Analyzing Sharpness along GD Trajectory: Progressive Sharpening and Edge of Stability</a></span>

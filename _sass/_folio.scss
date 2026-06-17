@@ -57,7 +57,7 @@ a:hover {
   font-weight: 400;
   margin: 0;
   text-decoration: none;
-  text-transform: lowercase;
+  text-transform: none;
 }
 
 .greedy-nav .visible-links a::before {
@@ -160,7 +160,7 @@ a:hover {
   font-size: 1.24rem;
   font-weight: 500;
   letter-spacing: 0;
-  text-transform: lowercase;
+  text-transform: none;
 }
 
 .page__content h3,
