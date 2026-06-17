@@ -13,7 +13,7 @@ redirect_from:
 <div class="home-hero__text">
 <h1 class="home-name">Zixuan Wang</h1>
 
-<p class="home-intro">Hi! I am <strong>Zixuan (子轩) Wang</strong>, a second-year Ph.D. student in <a href="https://ece.princeton.edu/">Electrical and Computer Engineering</a> at Princeton University. I am fortunate to be advised by <a href="https://jasondlee88.github.io/">Prof. Jason D. Lee</a>.</p>
+<p class="home-intro">Hi! I am <strong>Zixuan (子轩) Wang</strong>, a third-year Ph.D. student in <a href="https://ece.princeton.edu/">Electrical and Computer Engineering</a> at Princeton University. I am fortunate to be advised by <a href="https://jasondlee88.github.io/">Prof. Jason D. Lee</a>.</p>
 
 <p>My research interests broadly lie in understanding <strong>the foundations of LLMs and deep learning</strong>, as well as leveraging both theoretical and empirical explorations to advance the frontiers of deep learning and language modeling.</p>
 
@@ -47,13 +47,13 @@ redirect_from:
 
 <ol class="publication-list">
   <li>
+    <span class="pub-title"><a href="https://arxiv.org/abs/2510.25741">Scaling Latent Reasoning via Looped Language Models</a></span>
+    <div class="pub-authors">Rui-Jie Zhu*, <strong>Zixuan Wang*</strong>, Kai Hua*, Tianyu Zhang*, et al.</div>
+  </li>
+  <li>
     <span class="pub-title"><a href="https://arxiv.org/abs/2604.22951">The Power of Power Law: Asymmetry Enables Compositional Reasoning</a></span>
     <div class="pub-authors"><strong>Zixuan Wang</strong>, Xingyu Dang, Jason D. Lee, Kaifeng Lyu</div>
     <div class="pub-meta">ICML, 2026 Spotlight</div>
-  </li>
-  <li>
-    <span class="pub-title"><a href="https://arxiv.org/abs/2510.25741">Scaling Latent Reasoning via Looped Language Models</a></span>
-    <div class="pub-authors">Rui-Jie Zhu*, <strong>Zixuan Wang*</strong>, Kai Hua*, Tianyu Zhang*, et al.</div>
   </li>
   <li>
     <span class="pub-title"><a href="https://arxiv.org/abs/2505.23683">Learning Compositional Functions with Transformers from Easy-to-Hard Data</a></span>
