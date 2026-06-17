@@ -187,6 +187,26 @@ a:hover {
   margin-bottom: 1.1rem;
 }
 
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 2rem;
+  align-items: start;
+  margin-bottom: 1.2rem;
+}
+
+.home-hero__text > p:last-child {
+  margin-bottom: 0;
+}
+
+.home-hero__photo {
+  width: 180px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  object-position: 50% 20%;
+  border-radius: 50%;
+}
+
 .home-links {
   margin: 1.2rem 0 1.6rem;
   padding: 0;
@@ -340,6 +360,16 @@ a:hover {
   .page__title,
   .home-name {
     font-size: 1.7rem;
+  }
+
+  .home-hero {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 1.1rem;
+  }
+
+  .home-hero__photo {
+    width: 132px;
   }
 
   .post-list li {

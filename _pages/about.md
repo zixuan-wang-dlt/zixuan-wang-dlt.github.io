@@ -9,6 +9,8 @@ redirect_from:
   - /about.html
 ---
 
+<div class="home-hero">
+<div class="home-hero__text">
 <h1 class="home-name">Zixuan Wang</h1>
 
 <p class="home-intro">Hi! I am <strong>Zixuan Wang</strong>, a second-year Ph.D. student in <a href="https://ece.princeton.edu/">Electrical and Computer Engineering</a> at Princeton University. I am fortunate to be advised by <a href="https://jasondlee88.github.io/">Prof. Jason D. Lee</a>.</p>
@@ -18,6 +20,9 @@ My research interests broadly lie in understanding **the foundations of LLMs and
 I did my undergraduate study at the Institute for Interdisciplinary Information Sciences (IIIS), Tsinghua University, also known as **Yao Class**.
 
 You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing">CV</a> is here.
+</div>
+<img class="home-hero__photo" src="/images/WZX2.jpg" alt="Zixuan Wang">
+</div>
 
 <hr>
 
