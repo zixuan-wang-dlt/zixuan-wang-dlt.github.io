@@ -26,11 +26,13 @@ You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive
 
 <hr>
 
-<ul class="home-links">
-  <li><a href="https://scholar.google.com/citations?user=vNJDZyEAAAAJ">Google Scholar</a></li>
-  <li><a href="mailto:wangzx@princeton.edu">Email</a></li>
-  <li><a href="https://twitter.com/zzZixuanWang">Twitter</a></li>
-</ul>
+<div class="home-social" aria-label="profile links">
+  <a href="mailto:wangzx@princeton.edu" aria-label="Email" title="Email"><i class="fas fa-envelope" aria-hidden="true"></i></a>
+  <a href="https://scholar.google.com/citations?user=vNJDZyEAAAAJ" aria-label="Google Scholar" title="Google Scholar"><i class="ai ai-google-scholar" aria-hidden="true"></i></a>
+  <a href="https://github.com/zixuan-wang-dlt" aria-label="GitHub" title="GitHub"><i class="fab fa-github" aria-hidden="true"></i></a>
+  <a href="https://twitter.com/zzZixuanWang" aria-label="Twitter" title="Twitter"><i class="fab fa-twitter" aria-hidden="true"></i></a>
+  <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing" aria-label="CV" title="CV"><i class="fas fa-file-alt" aria-hidden="true"></i></a>
+</div>
 
 ## <a class="section-link" href="/blog/">latest posts</a>
 
