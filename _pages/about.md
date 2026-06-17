@@ -11,28 +11,20 @@ redirect_from:
 
 <div class="home-hero">
 <div class="home-hero__text">
-<h1 class="home-name">Zixuan Wang</h1>
+<h1 class="home-name">Zixuan (子轩) Wang</h1>
 
-<p class="home-intro">Hi! I am <strong>Zixuan Wang</strong>, a second-year Ph.D. student in <a href="https://ece.princeton.edu/">Electrical and Computer Engineering</a> at Princeton University. I am fortunate to be advised by <a href="https://jasondlee88.github.io/">Prof. Jason D. Lee</a>.</p>
+<p class="home-intro">Hi! I am <strong>Zixuan (子轩) Wang</strong>, a second-year Ph.D. student in <a href="https://ece.princeton.edu/">Electrical and Computer Engineering</a> at Princeton University. I am fortunate to be advised by <a href="https://jasondlee88.github.io/">Prof. Jason D. Lee</a>.</p>
 
-My research interests broadly lie in understanding **the foundations of LLMs and deep learning**, as well as leveraging both theoretical and empirical explorations to advance the frontiers of deep learning and language modeling.
+<p>My research interests broadly lie in understanding <strong>the foundations of LLMs and deep learning</strong>, as well as leveraging both theoretical and empirical explorations to advance the frontiers of deep learning and language modeling.</p>
 
-I did my undergraduate study at the Institute for Interdisciplinary Information Sciences (IIIS), Tsinghua University, also known as **Yao Class**.
+<p>I did my undergraduate study at the Institute for Interdisciplinary Information Sciences (IIIS), Tsinghua University, also known as <strong>Yao Class</strong>.</p>
 
-You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing">CV</a> is here.
+<p>You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing">CV</a> is here.</p>
 </div>
 <img class="home-hero__photo" src="/images/WZX2.jpg" alt="Zixuan Wang">
 </div>
 
 <hr>
-
-<div class="home-social" aria-label="profile links">
-  <a href="mailto:wangzx@princeton.edu" aria-label="Email" title="Email"><i class="fas fa-envelope" aria-hidden="true"></i></a>
-  <a href="https://scholar.google.com/citations?user=vNJDZyEAAAAJ" aria-label="Google Scholar" title="Google Scholar"><i class="ai ai-google-scholar" aria-hidden="true"></i></a>
-  <a href="https://github.com/zixuan-wang-dlt" aria-label="GitHub" title="GitHub"><i class="fab fa-github" aria-hidden="true"></i></a>
-  <a href="https://twitter.com/zzZixuanWang" aria-label="Twitter" title="Twitter"><i class="fab fa-twitter" aria-hidden="true"></i></a>
-  <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing" aria-label="CV" title="CV"><i class="fas fa-file-alt" aria-hidden="true"></i></a>
-</div>
 
 ## <a class="section-link" href="/blog/">Latest Posts</a>
 
