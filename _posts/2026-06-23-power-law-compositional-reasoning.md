@@ -22,9 +22,9 @@ toc_sticky: true
 
 **TL;DR.**
 - For one-hop memorization, uniform data gives rare skills more examples. Good.
-- For \(k\)-step composition, the useful gradient is gated by a global alignment term \(A(w)^{k-1}\). Dangerous.
-- Under uniform sampling, the initial alignment is only about \(d^{-1/2}\), so the compositional signal is about \(d^{-(k-1)/2}\).
-- Under a power law with \(\alpha>1\), the same alignment can be order one, giving gradient descent a direction near initialization.
+- For $k$-step composition, the useful gradient is gated by a global alignment term $A(w)^{k-1}$. Dangerous.
+- Under uniform sampling, the initial alignment is only about $d^{-1/2}$, so the compositional signal is about $d^{-(k-1)/2}$.
+- Under a power law with $\alpha>1$, the same alignment can be order one, giving gradient descent a direction near initialization.
 - The head does not just learn first; it changes the gradient that the tail receives.
 
 **Paper.** This post is a mathematical walk-through of [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951).
@@ -45,11 +45,11 @@ The punchline is:
 
 **Uniform sampling removes imbalance, but it also removes asymmetry. For composition, that symmetry can be the problem.**
 
-The post will analyze the smallest model where this can happen: a task where the label is the product of \(k\) hidden skills. The model is deliberately tiny. No attention heads, no language, no chain-of-thought. Its job is to isolate one mechanism:
+The post will analyze the smallest model where this can happen: a task where the label is the product of $k$ hidden skills. The model is deliberately tiny. No attention heads, no language, no chain-of-thought. Its job is to isolate one mechanism:
 
-\[
+$$
 \text{composition turns weak alignment into weak gradients.}
-\]
+$$
 
 ## The Surprising Plot
 
@@ -69,62 +69,62 @@ The claim is subtler:
 
 Start with one-hop memorization.
 
-Suppose a skill \(i\) has a hidden sign \(w_i^\star\in\{-1,+1\}\), and the model stores a parameter \(w_i\). If an example only asks for one skill, learning coordinate \(i\) is mostly a coverage problem. Rare coordinates need enough updates.
+Suppose a skill $i$ has a hidden sign $w_i^\star\in\{-1,+1\}$, and the model stores a parameter $w_i$. If an example only asks for one skill, learning coordinate $i$ is mostly a coverage problem. Rare coordinates need enough updates.
 
 Flattening helps because it increases the sampling probability of tail skills.
 
-Composition changes the game. If the answer depends on \(k\) skills at once, the model does not only need to learn the coordinates. It also needs to discover how the coordinates interact.
+Composition changes the game. If the answer depends on $k$ skills at once, the model does not only need to learn the coordinates. It also needs to discover how the coordinates interact.
 
 That interaction creates a gate.
 
 For one-hop learning, each coordinate can learn from its own examples.
 
-For \(k\)-hop composition, each coordinate's useful update depends on a global alignment signal shared across the whole model.
+For $k$-hop composition, each coordinate's useful update depends on a global alignment signal shared across the whole model.
 
 The rest of the post is just this sentence in math.
 
 ## The Minimal Model
 
-There are \(d\) hidden skills. Skill \(i\) has a hidden sign
+There are $d$ hidden skills. Skill $i$ has a hidden sign
 
-\[
+$$
 w_i^\star\in\{-1,+1\}.
-\]
+$$
 
-A training example samples \(k\) skill indices
+A training example samples $k$ skill indices
 
-\[
+$$
 I_1,\ldots,I_k \sim p,
-\]
+$$
 
-where \(p_i\) is the probability of skill \(i\). Write each sampled skill as a one-hot vector \(x_t=e_{I_t}\).
+where $p_i$ is the probability of skill $i$. Write each sampled skill as a one-hot vector $x_t=e_{I_t}$.
 
 The label is the product of the hidden signs:
 
-\[
+$$
 y=f_{w^\star}(X)
   =\prod_{t=1}^k x_t^\top w^\star
   =\prod_{t=1}^k w^\star_{I_t}.
-\]
+$$
 
 The model predicts
 
-\[
+$$
 f_w(X)=\prod_{t=1}^k x_t^\top w.
-\]
+$$
 
 Use the population loss
 
-\[
+$$
 \mathcal L(w)=\frac12\mathbb E_X\left[\left(f_w(X)-f_{w^\star}(X)\right)^2\right].
-\]
+$$
 
-The goal is to recover the hidden skill vector \(w^\star\), or at least predict products of hidden skills.
+The goal is to recover the hidden skill vector $w^\star$, or at least predict products of hidden skills.
 
 The assumptions are:
 
-- each example composes exactly \(k\) skills,
-- the same distribution \(p\) is used at each position,
+- each example composes exactly $k$ skills,
+- the same distribution $p$ is used at each position,
 - hidden skills are scalar signs,
 - we first study the population gradient, then use it to interpret finite-sample training,
 - the model is a microscope for one mechanism, not a full transformer theory.
@@ -133,57 +133,57 @@ The assumptions are:
 
 Define the weighted alignment
 
-\[
+$$
 A(w)=\sum_{i=1}^d p_i w_i w_i^\star.
-\]
+$$
 
 This asks: under the training distribution, how much does the current model point toward the true hidden skills?
 
 Also define the weighted norm
 
-\[
+$$
 B(w)=\sum_{i=1}^d p_i w_i^2.
-\]
+$$
 
 Let
 
-\[
+$$
 D=\mathrm{diag}(p_1,\ldots,p_d).
-\]
+$$
 
 For the multiplicative model above, the population gradient is
 
-\[
+$$
 \nabla \mathcal L(w)
 =kD\left(B(w)^{k-1}w-A(w)^{k-1}w^\star\right).
-\]
+$$
 
 This equation is the whole story.
 
-The matrix \(D\) is the local frequency factor. Frequent skills move faster because their \(p_i\)'s are larger.
+The matrix $D$ is the local frequency factor. Frequent skills move faster because their $p_i$'s are larger.
 
-The \(B(w)^{k-1}w\) term is the self term. It depends on the current model.
+The $B(w)^{k-1}w$ term is the self term. It depends on the current model.
 
-The \(A(w)^{k-1}w^\star\) term is the useful signal. It points toward the hidden skills.
+The $A(w)^{k-1}w^\star$ term is the useful signal. It points toward the hidden skills.
 
-And the exponent \(k-1\) is where composition bites.
+And the exponent $k-1$ is where composition bites.
 
-For \(k=1\), the useful signal is not gated by global alignment. The gradient is essentially coordinate-wise:
+For $k=1$, the useful signal is not gated by global alignment. The gradient is essentially coordinate-wise:
 
-\[
+$$
 \nabla \mathcal L(w)=D(w-w^\star).
-\]
+$$
 
 That is the memorization regime. If a rare coordinate is too rare, flattening helps.
 
-For \(k>1\), the useful signal for every coordinate is multiplied by \(A(w)^{k-1}\). If \(A(w)\) is tiny near initialization, every coordinate sees a tiny useful gradient.
+For $k>1$, the useful signal for every coordinate is multiplied by $A(w)^{k-1}$. If $A(w)$ is tiny near initialization, every coordinate sees a tiny useful gradient.
 
 This is the paradox in one line:
 
 | Task type | Useful coordinate signal | Main bottleneck |
 | --- | ---: | --- |
-| One-hop memorization | \(p_i\) | tail coverage |
-| \(k\)-hop composition | \(p_i A(w)^{k-1}\) | tail coverage plus global alignment |
+| One-hop memorization | $p_i$ | tail coverage |
+| $k$-hop composition | $p_i A(w)^{k-1}$ | tail coverage plus global alignment |
 
 *Table 1: In memorization, each skill can learn locally. In composition, local learning is gated by a global alignment term.*
 
@@ -191,50 +191,50 @@ This is the paradox in one line:
 
 Initialize
 
-\[
+$$
 w_i(0)\sim \mathcal N(0,r^2).
-\]
+$$
 
-Since \(w_i^\star\in\{-1,+1\}\), each product \(w_i(0)w_i^\star\) is still zero-mean with variance \(r^2\).
+Since $w_i^\star\in\{-1,+1\}$, each product $w_i(0)w_i^\star$ is still zero-mean with variance $r^2$.
 
 The initial alignment is
 
-\[
+$$
 A(w_0)=\sum_{i=1}^d p_i w_i(0)w_i^\star.
-\]
+$$
 
 It has mean zero and variance
 
-\[
+$$
 \mathrm{Var}(A(w_0))
 =r^2\sum_{i=1}^d p_i^2.
-\]
+$$
 
 This is where the data distribution enters.
 
-If \(p_i=1/d\), then
+If $p_i=1/d$, then
 
-\[
+$$
 \sum_{i=1}^d p_i^2
 =d\cdot \frac{1}{d^2}
 =\frac1d.
-\]
+$$
 
 So a typical initialization has
 
-\[
+$$
 |A(w_0)|\approx \frac{r}{\sqrt d}.
-\]
+$$
 
 The useful compositional signal scales like
 
-\[
+$$
 |A(w_0)|^{k-1}
 \approx
 \left(\frac{r}{\sqrt d}\right)^{k-1}.
-\]
+$$
 
-Uniform data averages the initial random alignment over all \(d\) skills. That averaging makes the alignment small. Composition then raises the small number to a power.
+Uniform data averages the initial random alignment over all $d$ skills. That averaging makes the alignment small. Composition then raises the small number to a power.
 
 That is why the uniform case can be hard:
 
@@ -242,11 +242,11 @@ That is why the uniform case can be hard:
 
 The paper formalizes this through a correlational statistical-query lower bound. In the uniform case, a gradient-like learner needs either many queries or very fine tolerance to escape the symmetric region. One informal version from the slides is:
 
-\[
+$$
 \tau^2 \le \left(\frac{\log(dq)}{d}\right)^{k/2}
-\]
+$$
 
-for a correlational statistical-query learner using \(q\) gradient queries to reach constant loss. If the tolerance behaves like sampling noise, this means the needed sample scale worsens rapidly with \(k\).
+for a correlational statistical-query learner using $q$ gradient queries to reach constant loss. If the tolerance behaves like sampling noise, this means the needed sample scale worsens rapidly with $k$.
 
 You do not need the lower bound to remember the mechanism. The variance calculation already shows where the signal disappears.
 
@@ -254,35 +254,35 @@ You do not need the lower bound to remember the mechanism. The variance calculat
 
 Now sample skills from a power law:
 
-\[
+$$
 p_i=\frac{i^{-\alpha}}{\sum_{j=1}^d j^{-\alpha}}.
-\]
+$$
 
-For fixed \(\alpha>1\), the head has constant-scale mass as \(d\) grows. The same calculation gives
+For fixed $\alpha>1$, the head has constant-scale mass as $d$ grows. The same calculation gives
 
-\[
+$$
 \mathrm{Var}(A(w_0))
 =r^2\sum_{i=1}^d p_i^2
 \approx
 r^2\frac{\sum_i i^{-2\alpha}}{\left(\sum_i i^{-\alpha}\right)^2}.
-\]
+$$
 
-Unlike the uniform case, this does not shrink like \(1/d\). For fixed \(\alpha>1\), it is order one.
+Unlike the uniform case, this does not shrink like $1/d$. For fixed $\alpha>1$, it is order one.
 
 So at initialization,
 
-\[
+$$
 |A(w_0)|\approx \Theta(r),
-\]
+$$
 
-instead of \(r/\sqrt d\).
+instead of $r/\sqrt d$.
 
 Now compare the signal:
 
-| Training distribution | Initial alignment \(|A(w_0)|\) | Useful signal \(|A(w_0)|^{k-1}\) | What gradient descent sees |
+| Training distribution | Initial alignment $\lvert A(w_0)\rvert$ | Useful signal $\lvert A(w_0)\rvert^{k-1}$ | What gradient descent sees |
 | --- | ---: | ---: | --- |
-| Uniform, \(p_i=1/d\) | \(r/\sqrt d\) | \(r^{k-1}d^{-(k-1)/2}\) | almost no direction |
-| Power law, \(p_i\propto i^{-\alpha}\), \(\alpha>1\) | \(\Theta(r)\) | \(\Theta(r^{k-1})\) | a visible early direction |
+| Uniform, $p_i=1/d$ | $r/\sqrt d$ | $r^{k-1}d^{-(k-1)/2}$ | almost no direction |
+| Power law, $p_i\propto i^{-\alpha}$, $\alpha>1$ | $\Theta(r)$ | $\Theta(r^{k-1})$ | a visible early direction |
 
 *Table 2: A power law does not solve the tail at initialization. It makes the global alignment detectable, which turns on the compositional gradient.*
 
@@ -294,32 +294,32 @@ This is the first punchline:
 
 The second punchline is more important.
 
-Look at coordinate \(i\):
+Look at coordinate $i$:
 
-\[
+$$
 \nabla_i \mathcal L(w)
 =kp_i\left(B(w)^{k-1}w_i-A(w)^{k-1}w_i^\star\right).
-\]
+$$
 
 The useful part of the update is proportional to
 
-\[
+$$
 p_iA(w)^{k-1}w_i^\star.
-\]
+$$
 
 There are two factors.
 
-The local factor \(p_i\) says frequent skills move faster than rare skills. This is the long-tail bottleneck.
+The local factor $p_i$ says frequent skills move faster than rare skills. This is the long-tail bottleneck.
 
-The global factor \(A(w)^{k-1}\) says every coordinate benefits when the whole model becomes more aligned with \(w^\star\).
+The global factor $A(w)^{k-1}$ says every coordinate benefits when the whole model becomes more aligned with $w^\star$.
 
 This creates a three-stage dynamic.
 
-**Stage I: escape.** Power-law asymmetry makes \(A(w_0)\) large enough that the model has a descent direction near initialization.
+**Stage I: escape.** Power-law asymmetry makes $A(w_0)$ large enough that the model has a descent direction near initialization.
 
-**Stage II: head-to-tail transfer.** Head skills move first because their \(p_i\)'s are large. As they align, \(A(w)\) increases. As \(A(w)\) increases, the multiplier \(A(w)^{k-1}\) strengthens the useful gradient for all skills, including rare ones.
+**Stage II: head-to-tail transfer.** Head skills move first because their $p_i$'s are large. As they align, $A(w)$ increases. As $A(w)$ increases, the multiplier $A(w)^{k-1}$ strengthens the useful gradient for all skills, including rare ones.
 
-**Stage III: tail-limited convergence.** Once alignment is high, the landscape is no longer flat. But the rarest skills still have tiny \(p_i\), so final convergence is limited by how often the tail appears.
+**Stage III: tail-limited convergence.** Once alignment is high, the landscape is no longer flat. But the rarest skills still have tiny $p_i$, so final convergence is limited by how often the tail appears.
 
 The slogan is:
 
@@ -335,13 +335,13 @@ The long tail is still long. The difference is that the learner no longer has to
 
 The simplified theorem has the same shape as the story.
 
-Under uniform inputs, the paper proves an SQ-style lower bound: for \(k\)-fold composition, gradient-like statistical queries need either many queries or very fine tolerance. In slide form, the obstruction scales like a power of \(d\) that worsens with \(k\).
+Under uniform inputs, the paper proves an SQ-style lower bound: for $k$-fold composition, gradient-like statistical queries need either many queries or very fine tolerance. In slide form, the obstruction scales like a power of $d$ that worsens with $k$.
 
-Under a power law \(p_j\propto j^{-\alpha}\) with \(\alpha>1\) and constant \(k\), minibatch SGD can learn the hidden skill vector using roughly
+Under a power law $p_j\propto j^{-\alpha}$ with $\alpha>1$ and constant $k$, minibatch SGD can learn the hidden skill vector using roughly
 
-\[
+$$
 \widetilde O(d^{2\alpha})
-\]
+$$
 
 samples in the simplified model.
 
@@ -359,12 +359,12 @@ In state tracking, the loss landscape around initialization is flatter under uni
 
 In synthetic multi-hop QA, questions are generated by chaining facts:
 
-\[
+$$
 e_0 \xrightarrow{r_1} e_1
 \xrightarrow{r_2} e_2
 \cdots
 \xrightarrow{r_k} e_k.
-\]
+$$
 
 The model must compose relations, not merely recall one edge.
 
@@ -382,7 +382,7 @@ The ablations are useful because they prevent the story from becoming too cute.
 
 Fine-grained asymmetry matters. A power law over coarse bins helps less than a fine-grained power law over skills.
 
-The exponent \(\alpha\) is a tradeoff. Larger \(\alpha\) gives a stronger head and larger initial alignment, but it also makes the tail lighter. Early learning improves; final tail convergence can slow down.
+The exponent $\alpha$ is a tradeoff. Larger $\alpha$ gives a stronger head and larger initial alignment, but it also makes the tail lighter. Early learning improves; final tail convergence can slow down.
 
 ![The power-law exponent controls a tradeoff: stronger head signal can help early learning, but a lighter tail slows rare skills.](/images/blog/power-law/exponent-tradeoff.png)
 
@@ -407,9 +407,9 @@ A power law makes some landmarks appear again and again. At first, that seems wa
 In the model:
 
 - the landmarks are head skills,
-- the map orientation is \(A(w)\),
-- the strength of the compositional signal is \(A(w)^{k-1}\),
-- the remaining difficulty of rare locations is \(p_i\).
+- the map orientation is $A(w)$,
+- the strength of the compositional signal is $A(w)^{k-1}$,
+- the remaining difficulty of rare locations is $p_i$.
 
 The analogy is not that head skills contain all the knowledge. They do not.
 
@@ -437,7 +437,7 @@ This is the part that matters if we want the idea to survive contact with realit
 
 - Power law does not always beat uniform. For one-hop memorization, uniform can be better because coverage is the bottleneck.
 - Power law does not remove the tail bottleneck. Rare skills still receive fewer updates.
-- The clean order-one alignment claim uses fixed \(\alpha>1\). Other regimes need separate analysis.
+- The clean order-one alignment claim uses fixed $\alpha>1$. Other regimes need separate analysis.
 - The optimal data distribution is not identified. The theorem explains one helpful asymmetry, not the best possible sampler.
 - The simplified model uses scalar sign skills and independent samples from a known distribution.
 - The transformer experiments provide mechanistic evidence across synthetic reasoning tasks, not a theorem for full LLM pretraining.
