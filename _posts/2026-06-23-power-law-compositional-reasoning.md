@@ -23,6 +23,10 @@ toc_sticky: true
 
 **The old intuition.** Natural language has a brutal long tail: a few skills and facts appear constantly, while most appear rarely. The usual data-centric instinct is therefore to reweight or curate toward a more uniform distribution. This sounds especially compelling for rare skills. If a model almost never sees a fact, a relation, or a small reasoning primitive, why would repeating the head help? The head already has enough examples; the tail needs coverage.
 
+[![Uniform and power-law skill distributions.](/images/blog/power-law/distribution-comparison.png)](/images/blog/power-law/distribution-comparison.pdf)
+
+*Figure 1: Uniform sampling flattens the skill distribution. Power-law sampling keeps a heavy head and a long tail. The puzzle is why this asymmetry can help once examples must be composed.*
+
 **The conflict.** Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), starts from the opposite empirical surprise. Across compositional reasoning tasks such as state tracking, multi-hop QA, and multi-step arithmetic, training under a power-law distribution can outperform training under a uniform distribution. The point is not that the tail stops being rare. The point is that power-law sampling creates an asymmetry in the loss landscape, letting the model first acquire high-frequency compositions and then use that progress as a stepping stone toward rare long-tail skills.
 
 ## Why Uniform Looks Right
@@ -33,7 +37,7 @@ toc_sticky: true
 
 ![Uniform learns a one-hop memorization task faster than power-law sampling.](/images/blog/power-law/single-hop-memorization.png)
 
-*Figure 1: For one-hop memorization, the usual long-tail intuition is correct. Uniform sampling gives rare relations more exposure and reaches high exact match faster.*
+*Figure 2: For one-hop memorization, the usual long-tail intuition is correct. Uniform sampling gives rare relations more exposure and reaches high exact match faster.*
 
 **Why the intuition is reasonable.** This is why "just use a power law" would be a strange story if the task were only memorization. The head is over-sampled; the tail is under-sampled. Uniform data gives every skill a fairer chance. If a model only has to store isolated facts, flattening the distribution is a very reasonable thing to try.
 
@@ -43,7 +47,7 @@ toc_sticky: true
 
 ![Power-law sampling learns the multi-hop QA task much earlier than uniform sampling.](/images/blog/power-law/multi-hop-qa-accuracy.png)
 
-*Figure 2: In a three-hop QA task, the conclusion flips. The power-law run reaches high accuracy much earlier, even though the final task requires composing facts rather than memorizing one edge.*
+*Figure 3: In a three-hop QA task, the conclusion flips. The power-law run reaches high accuracy much earlier, even though the final task requires composing facts rather than memorizing one edge.*
 
 **The real question.** So the question is not "is uniform good or bad?" The question is: what changes when we move from memorization to composition?
 
@@ -185,7 +189,7 @@ instead of $r/\sqrt d$. Power law does not make the tail common. It does somethi
 
 ![Uniform training is nearly flat near initialization, while power-law training has a clearer descent direction.](/images/blog/power-law/loss-landscape.png)
 
-*Figure 3: Loss over the top two PCA directions of checkpoint trajectories. The zoomed region shows the key difference: uniform training starts in a flat patch, while power-law training sees a descent direction.*
+*Figure 4: Loss over the top two PCA directions of checkpoint trajectories. The zoomed region shows the key difference: uniform training starts in a flat patch, while power-law training sees a descent direction.*
 
 **Why "asymmetric" matters.** This is the sense in which the power law is "necessary" in the toy model: not because Zipf's law is magically optimal, but because some asymmetry is needed to break the flat symmetric landscape. Uniform removes imbalance, but for composition it can also remove the signal.
 
@@ -208,7 +212,7 @@ $$
 
 ![Power-law state tracking creates a staged head-to-tail learning process.](/images/blog/power-law/state-tracking-power-law.png)
 
-*Figure 4: In state tracking, the learning order follows the theory: escape, head-to-tail transfer, and then tail-limited convergence. The head does not merely learn first; it changes the gradient seen by the tail.*
+*Figure 5: In state tracking, the learning order follows the theory: escape, head-to-tail transfer, and then tail-limited convergence. The head does not merely learn first; it changes the gradient seen by the tail.*
 
 **The theorem.** The theorem says this more formally. Under uniform inputs, the SQ lower bound gives a $d^{\Omega(k)}$-type obstruction for gradient-like learning of $k$-fold composition. Under a power law $p_j\propto j^{-\alpha}$ with $\alpha>1$ and constant $k$, minibatch SGD learns the hidden skill vector using roughly
 
@@ -243,11 +247,11 @@ $$
 
 ![Power-law training reaches high test accuracy earlier on non-modular GSM-style arithmetic.](/images/blog/power-law/gsm-nonmod.png)
 
-*Figure 5: Non-modular GSM-style arithmetic. Power-law training learns the compositional dependency-graph task earlier than uniform training.*
+*Figure 6: Non-modular GSM-style arithmetic. Power-law training learns the compositional dependency-graph task earlier than uniform training.*
 
 ![Power-law training is much faster on modular GSM-style arithmetic.](/images/blog/power-law/gsm-modular.png)
 
-*Figure 6: Modular GSM-style arithmetic. Uniform sampling remains much slower, while power-law training quickly reaches near-perfect accuracy.*
+*Figure 7: Modular GSM-style arithmetic. Uniform sampling remains much slower, while power-law training quickly reaches near-perfect accuracy.*
 
 ## What This Does Not Say
 
