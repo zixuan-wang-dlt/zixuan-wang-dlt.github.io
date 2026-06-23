@@ -47,7 +47,7 @@ toc_sticky: true
 
 **The real question.** So the question is not "is uniform good or bad?" The question is: what changes when we move from memorization to composition?
 
-## Composition Adds A Gate
+## Composition Needs Global Alignment
 
 **The toy world.** To isolate the mechanism, strip the task down to a tiny mathematical model. There are $d$ hidden skills. Skill $i$ has a hidden sign $w_i^\star\in\lbrace -1,+1\rbrace$. A training example samples $k$ skill indices $I_1,\ldots,I_k$ from a distribution $p$, and the label is the product of the corresponding hidden signs:
 
@@ -88,9 +88,9 @@ $$
 =kD\left(B(w)^{k-1}w-A(w)^{k-1}w^\star\right).
 $$
 
-**The gradient.** This equation is the whole story. The diagonal matrix $D$ is the local frequency factor: frequent skills move faster because they appear more often. The term $A(w)^{k-1}w^\star$ is the useful signal pointing toward the hidden skill vector. The exponent $k-1$ is the new difficulty caused by composition. If the current model has tiny global alignment with the target, then the useful gradient is tiny for every coordinate.
+**The gradient.** This equation is the whole story. The diagonal matrix $D$ is the local frequency factor: frequent skills move faster because they appear more often. The term $A(w)^{k-1}w^\star$ is the signal term from the slides: it is the part of the gradient that points toward the hidden skill vector. The exponent $k-1$ is the new difficulty caused by composition. If the current model barely agrees with the target globally, then $A(w)$ is tiny, so this useful signal is tiny for every coordinate.
 
-For $k=1$, the gate disappears:
+For $k=1$, this global alignment issue disappears:
 
 $$
 \nabla \mathcal L(w)=D(w-w^\star).
@@ -102,14 +102,14 @@ $$
 p_iA(w)^{k-1}w_i^\star.
 $$
 
-**Two bottlenecks.** Now there are two bottlenecks. The local factor $p_i$ still controls how often skill $i$ appears. But the global factor $A(w)^{k-1}$ controls whether the model sees a useful compositional direction at all.
+**Two bottlenecks.** Now there are two bottlenecks. The local factor $p_i$ still controls how often skill $i$ appears. But the global factor $A(w)^{k-1}$ controls the strength of the shared compositional signal. If $A(w)$ is small, all skills see a weak signal, including the frequent ones.
 
 | Task | Useful coordinate signal | Main bottleneck |
 | --- | ---: | --- |
 | One-hop memorization | $p_i$ | tail coverage |
 | $k$-hop composition | $p_iA(w)^{k-1}$ | coverage plus global alignment |
 
-*Table 1: Uniform sampling helps the local coverage term. Composition adds a global alignment gate, and that gate can be almost closed under uniform data.*
+*Table 1: Uniform sampling helps the local coverage term. Composition also depends on the global alignment term $A(w)^{k-1}$, which can be tiny under uniform data.*
 
 ## Why Uniform Can Make Reasoning Flat
 
@@ -179,7 +179,7 @@ instead of $r/\sqrt d$. Power law does not make the tail common. It does somethi
 | Uniform, $p_i=1/d$ | $r/\sqrt d$ | $r^{k-1}d^{-(k-1)/2}$ | nearly flat |
 | Power law, $p_i\propto i^{-\alpha}$ | $\Theta(r)$ | $\Theta(r^{k-1})$ | a visible descent direction |
 
-*Table 2: The head of the power law turns on the global alignment gate. That is why skew can help composition even though it hurts tail coverage.*
+*Table 2: The head of the power law makes the initial alignment signal much larger. That is why skew can help composition even though it hurts tail coverage.*
 
 **The landscape view.** The loss landscape plot shows the same mechanism in a transformer state-tracking experiment. Around initialization, the uniform run sits in a flat region. The power-law run has a clearer direction of descent.
 
