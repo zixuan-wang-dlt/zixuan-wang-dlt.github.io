@@ -69,7 +69,7 @@ The claim is subtler:
 
 Start with one-hop memorization.
 
-Suppose a skill $i$ has a hidden sign $w_i^\star\in\{-1,+1\}$, and the model stores a parameter $w_i$. If an example only asks for one skill, learning coordinate $i$ is mostly a coverage problem. Rare coordinates need enough updates.
+Suppose a skill $i$ has a hidden sign $w_i^\star\in\lbrace -1,+1\rbrace$, and the model stores a parameter $w_i$. If an example only asks for one skill, learning coordinate $i$ is mostly a coverage problem. Rare coordinates need enough updates.
 
 Flattening helps because it increases the sampling probability of tail skills.
 
@@ -88,7 +88,7 @@ The rest of the post is just this sentence in math.
 There are $d$ hidden skills. Skill $i$ has a hidden sign
 
 $$
-w_i^\star\in\{-1,+1\}.
+w_i^\star\in\lbrace -1,+1\rbrace.
 $$
 
 A training example samples $k$ skill indices
@@ -195,7 +195,7 @@ $$
 w_i(0)\sim \mathcal N(0,r^2).
 $$
 
-Since $w_i^\star\in\{-1,+1\}$, each product $w_i(0)w_i^\star$ is still zero-mean with variance $r^2$.
+Since $w_i^\star\in\lbrace -1,+1\rbrace$, each product $w_i(0)w_i^\star$ is still zero-mean with variance $r^2$.
 
 The initial alignment is
 
