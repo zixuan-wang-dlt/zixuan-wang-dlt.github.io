@@ -119,7 +119,7 @@ The question is no longer "is uniform good or bad?" The question is: **what chan
 
 To isolate the mechanism, use the smallest compositional world possible.
 
-**Setup.** There are $d$ skills. Skill $i$ has a hidden sign $w_i^\star\in\{-1,+1\}$. A training example samples $k$ skills from a distribution $p$, and the label is the product of their hidden signs:
+**Setup.** There are $d$ skills. Skill $i$ has a hidden sign $w_i^\star\in\lbrace -1,+1\rbrace$. A training example samples $k$ skills from a distribution $p$, and the label is the product of their hidden signs:
 
 $$
 y=\prod_{t=1}^k w^\star_{I_t}.
