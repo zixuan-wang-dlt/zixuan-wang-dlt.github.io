@@ -22,12 +22,6 @@ toc_sticky: true
 
 *Uniform sampling sounds obviously right for long-tail learning: rare skills need more examples. But for compositional reasoning, that intuition can be exactly wrong. Uniform data fails due to worse landscape, but power-law data breaks the symmetry and creates a slope.*
 
-<div class="powerlaw-tldr">
-  <p>Uniform is great when the job is to see every rare fact. But composition first needs something else: a slope. Power-law data can give gradient descent a first downhill direction.</p>
-</div>
-
-<p class="powerlaw-opening-line">The point is not that power law secretly covers the tail better. It does not. It helps because it can make the first useful direction visible.</p>
-
 Links: [paper](https://arxiv.org/abs/2604.22951), [PDF](https://arxiv.org/pdf/2604.22951), and Eric Michaud's [quanta essay](https://ericjmichaud.com/quanta/).
 
 ## The question
