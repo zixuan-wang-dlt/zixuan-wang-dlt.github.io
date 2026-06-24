@@ -250,9 +250,17 @@
       grid-template-columns: 1fr;
       gap: 1em;
 
+      a {
+        display: block;
+      }
+
       @include breakpoint($medium) {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+    }
+
+    .powerlaw-panels--middle {
+      align-items: center;
     }
   }
 
