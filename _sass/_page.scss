@@ -116,9 +116,16 @@
 
   .page__content {
     line-height: 1.68;
+    font-size: 1.02em;
 
     h2 {
       margin-top: 2.1em;
+      padding-bottom: 0.18em;
+      border-bottom: 1px solid mix(#fff, $border-color, 35%);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.65em;
+      font-weight: 700;
+      letter-spacing: 0;
     }
 
     blockquote {
@@ -128,6 +135,53 @@
       background: mix(#fff, $border-color, 72%);
       color: mix(#000, $text-color, 12%);
       font-size: 0.98em;
+    }
+
+    strong {
+      color: mix(#000, $text-color, 8%);
+    }
+  }
+
+  .powerlaw-pullquote {
+    position: relative;
+    max-width: 720px;
+    margin: 2em auto 2.2em;
+    padding: 1.25em 1.6em 1.15em;
+    border: 1px solid mix(#000, $border-color, 10%);
+    border-left: 1px solid mix(#000, $border-color, 10%) !important;
+    border-radius: 8px;
+    background: linear-gradient(180deg, mix(#fff, $primary-color, 92%), #fff);
+    box-shadow: 0 8px 28px rgba(#000, 0.07);
+    color: mix(#000, $text-color, 6%);
+    font-family: Georgia, "Times New Roman", serif;
+    text-align: center;
+
+    &::before {
+      content: "\201C";
+      position: absolute;
+      top: -0.28em;
+      left: 0.24em;
+      color: rgba($primary-color, 0.22);
+      font-size: 5.2em;
+      line-height: 1;
+    }
+
+    p {
+      position: relative;
+      margin: 0;
+      font-size: 1.28em;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    cite {
+      display: block;
+      margin-top: 0.7em;
+      color: mix(#fff, $text-color, 28%);
+      font-family: $sans-serif;
+      font-size: $type-size-6;
+      font-style: normal;
+      line-height: 1.4;
     }
   }
 

@@ -44,8 +44,10 @@ The tempting answer is yes. A model has to learn common things, like basic synta
 
 Michaud's quanta view makes this question sharper. His essay frames pretraining as learning many discrete modules: some retrieve knowledge, some implement algorithms, and some are useful on far more tokens than others. One of the assumptions is:
 
-> The "use frequencies" of the quanta naturally follow a power law.  
-> -- Eric Michaud, [On neural scaling and the quanta hypothesis](https://ericjmichaud.com/quanta/)
+<blockquote class="powerlaw-pullquote">
+  <p>The "use frequencies" of the quanta naturally follow a power law.</p>
+  <cite>Eric Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a></cite>
+</blockquote>
 
 <figure class="powerlaw-figure powerlaw-figure--pair">
   <div class="powerlaw-panels powerlaw-panels--middle">
@@ -62,6 +64,8 @@ Michaud's quanta view makes this question sharper. His essay frames pretraining 
 </figure>
 
 Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), studies the same long-tail issue from a different angle. We ask what happens when the model does not merely recall one quantum, skill, or fact, but must compose several of them.
+
+**But if the task is multi-hop?** This is where the long-tail intuition starts to wobble. A multi-hop example is not just a rare item; it is a product of several items that all have to line up.
 
 The answer is that uniform sampling helps coverage, but composition also needs alignment. If the data distribution is too symmetric, gradient descent may not know which compositional direction to follow. A power law is useful not because it makes the tail common, but because the repeated head creates a handle.
 
@@ -94,7 +98,7 @@ That intuition shows up cleanly in a one-hop QA experiment. We randomly rank rel
 
 If the task were only to store isolated facts, "use a power law" would be a strange recommendation. The head is already frequent; the tail needs data. Flattening the distribution gives every skill a fairer chance.
 
-Now change only the task. Instead of asking for one relation, ask for a chain. The model must apply one relation, use the intermediate entity, and then apply another relation.
+**Now change only the task.** Instead of asking for one relation, ask for a chain. The model must apply one relation, use the intermediate entity, and then apply another relation.
 
 <div class="powerlaw-example">
   <div class="powerlaw-example__title">Two-hop example</div>
@@ -138,7 +142,7 @@ This model is not meant to be realistic. Its job is to separate two effects:
 - For $k=1$, learning is local. Each example updates one skill.
 - For $k>1$, learning is global. A skill is useful only when it agrees with the other skills in the product.
 
-The important quantity is the weighted alignment
+**The mechanism.** The important quantity is the weighted alignment
 
 $$
 A(w)=\sum_{i=1}^d p_i w_iw_i^\star.
@@ -200,7 +204,7 @@ The factor $p_i$ is local coverage: how often skill $i$ appears. Uniform samplin
 
 ## Why symmetry is the problem
 
-At random initialization, the model has tiny accidental correlations with the target. The question is whether the training distribution amplifies those correlations into a useful direction or averages them away.
+**Symmetry hides the signal.** At random initialization, the model has tiny accidental correlations with the target. The question is whether the training distribution amplifies those correlations into a useful direction or averages them away.
 
 If $w_i(0)\sim \mathcal N(0,r^2)$, then
 
@@ -245,7 +249,7 @@ But the intuitive statement is more memorable:
 
 ## The head is a handle for the tail
 
-Once the model starts moving in the right direction, the head plays a second role. Frequent skills learn first. As they align with the target, they increase $A(w)$. That larger alignment then strengthens the useful gradient for every skill, including rare ones.
+**Head first, tail later.** Once the model starts moving in the right direction, the head plays a second role. Frequent skills learn first. As they align with the target, they increase $A(w)$. That larger alignment then strengthens the useful gradient for every skill, including rare ones.
 
 So the power law creates a staged learning order:
 
@@ -257,7 +261,7 @@ This is why the result is not "skew is always good." It is a tradeoff. Too littl
 
 ## Does this transfer to transformers?
 
-Yes, at least in the controlled state-tracking task from the paper. State tracking is a clean transformer testbed because it is explicitly a $k$-fold composition problem: the model must carry an internal state through several updates, not just retrieve one isolated fact. It reads the current state, applies the next transition, updates the state, and repeats.
+**A transformer sanity check.** Yes, at least in the controlled state-tracking task from the paper. State tracking is a clean transformer testbed because it is explicitly a $k$-fold composition problem: the model must carry an internal state through several updates, not just retrieve one isolated fact. It reads the current state, applies the next transition, updates the state, and repeats.
 
 If the toy model is telling the right story, we should see three signatures in transformers. First, uniform training should be flat near initialization because the compositional direction is hard to see. Second, power-law training should create a visible descent direction. Third, the head skills should learn first and then help unlock the tail.
 
@@ -275,7 +279,7 @@ If the toy model is telling the right story, we should see three signatures in t
 
 ## Back to reasoning tasks
 
-State tracking is useful because it isolates the mechanism, but it is still a laboratory task. We also want to know whether the same signature appears in more language-like reasoning tasks. That is why the paper uses two additional settings.
+**Why these two tasks?** State tracking is useful because it isolates the mechanism, but it is still a laboratory task. We also want to know whether the same signature appears in more language-like reasoning tasks. That is why the paper uses two additional settings.
 
 Multi-hop QA tests relation composition in natural-language form. We generate a synthetic knowledge graph with facts of the form
 
