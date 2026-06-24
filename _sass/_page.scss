@@ -107,6 +107,89 @@
   }
 }
 
+.page.power-law-post {
+  .page__inner-wrap {
+    max-width: 880px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .page__content {
+    line-height: 1.68;
+
+    h2 {
+      margin-top: 2.1em;
+    }
+
+    blockquote {
+      margin: 1.6em auto;
+      padding: 0.9em 1.2em;
+      border-left: 4px solid mix(#000, $border-color, 18%);
+      background: mix(#fff, $border-color, 72%);
+      color: mix(#000, $text-color, 12%);
+      font-size: 0.98em;
+    }
+  }
+
+  .powerlaw-figure {
+    display: block;
+    max-width: 720px;
+    margin: 2.2em auto;
+    text-align: center;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin-right: auto;
+      margin-left: auto;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(#000, 0.08);
+    }
+
+    figcaption {
+      max-width: 680px;
+      margin: 0.7em auto 0;
+      color: mix(#fff, $text-color, 25%);
+      font-size: $type-size-6;
+      font-style: italic;
+      line-height: 1.45;
+      text-align: center;
+    }
+  }
+
+  .powerlaw-figure--small {
+    max-width: 620px;
+  }
+
+  .powerlaw-figure--wide {
+    max-width: 820px;
+  }
+
+  .powerlaw-figure--pair {
+    max-width: 860px;
+
+    .powerlaw-panels {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1em;
+
+      @include breakpoint($medium) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  }
+
+  .table-caption {
+    margin-top: -1em;
+    color: mix(#fff, $text-color, 25%);
+    font-size: $type-size-6;
+    font-style: italic;
+    line-height: 1.45;
+    text-align: center;
+  }
+}
+
 .page__hero {
   position: relative;
   margin-bottom: 2em;
