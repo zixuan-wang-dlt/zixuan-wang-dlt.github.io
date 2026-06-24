@@ -40,9 +40,9 @@ Links: [paper](https://arxiv.org/abs/2604.22951), [PDF](https://arxiv.org/pdf/26
 
 If language is made of many small pieces of knowledge and computation, should we make their training frequencies uniform?
 
-**The tempting answer.** Yes. A model has to learn common things, like basic syntax and frequent relations, but also rare things: a specific person's advisor, an uncommon arithmetic operation, a niche entity, a long-tail relation, or a small algorithmic trick. If rare skills are the problem, flattening the distribution seems like the obvious fix.
+The tempting answer is yes. A model has to learn common things, like basic syntax and frequent relations, but also rare things: a specific person's advisor, an uncommon arithmetic operation, a niche entity, a long-tail relation, or a small algorithmic trick. If rare skills are the problem, flattening the distribution seems like the obvious fix.
 
-**The long-tail premise.** Michaud's quanta view makes this question sharper. His essay frames pretraining as learning many discrete modules: some retrieve knowledge, some implement algorithms, and some are useful on far more tokens than others. One of the assumptions is:
+Michaud's quanta view makes this question sharper. His essay frames pretraining as learning many discrete modules: some retrieve knowledge, some implement algorithms, and some are useful on far more tokens than others. One of the assumptions is:
 
 > The "use frequencies" of the quanta naturally follow a power law.  
 > -- Eric Michaud, [On neural scaling and the quanta hypothesis](https://ericjmichaud.com/quanta/)
@@ -61,9 +61,9 @@ If language is made of many small pieces of knowledge and computation, should we
   <figcaption>Figure 1: Michaud's quanta picture has two parts: individual skills can appear as sharp learning transitions, and their use frequencies form a long-tailed sequence. Our question is what changes when an example needs several such skills to work together. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
 </figure>
 
-**Now make it multi-hop.** Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), studies the same long-tail issue from a different angle. We ask what happens when the model does not merely recall one quantum, skill, or fact, but must compose several of them.
+Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), studies the same long-tail issue from a different angle. We ask what happens when the model does not merely recall one quantum, skill, or fact, but must compose several of them.
 
-**The answer.** Uniform sampling helps coverage, but composition also needs alignment. If the data distribution is too symmetric, gradient descent may not know which compositional direction to follow. A power law is useful not because it makes the tail common, but because the repeated head creates a handle.
+The answer is that uniform sampling helps coverage, but composition also needs alignment. If the data distribution is too symmetric, gradient descent may not know which compositional direction to follow. A power law is useful not because it makes the tail common, but because the repeated head creates a handle.
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <a href="/images/blog/power-law/distribution-comparison.pdf">
@@ -74,7 +74,7 @@ If language is made of many small pieces of knowledge and computation, should we
 
 ## Why uniform looks right
 
-**One-hop recall.** Start with memorization. If a relation or entity appears rarely, the model needs more direct exposure to it. In this setting, uniform sampling is the natural fix because the bottleneck is coverage.
+Start with memorization. If a relation or entity appears rarely, the model needs more direct exposure to it. In this setting, uniform sampling is the natural fix because the bottleneck is coverage.
 
 <div class="powerlaw-example">
   <div class="powerlaw-example__title">One-hop example</div>
@@ -94,7 +94,7 @@ That intuition shows up cleanly in a one-hop QA experiment. We randomly rank rel
 
 If the task were only to store isolated facts, "use a power law" would be a strange recommendation. The head is already frequent; the tail needs data. Flattening the distribution gives every skill a fairer chance.
 
-**What about multi-hop compositions?** Instead of asking for one relation, ask for a chain. The model must apply one relation, use the intermediate entity, and then apply another relation.
+Now change only the task. Instead of asking for one relation, ask for a chain. The model must apply one relation, use the intermediate entity, and then apply another relation.
 
 <div class="powerlaw-example">
   <div class="powerlaw-example__title">Two-hop example</div>
@@ -110,7 +110,7 @@ If rare facts are hard to memorize, rare combinations should be worse. So unifor
 
 But the experiment goes the other way.
 
-<figure class="powerlaw-figure">
+<figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/multi-hop-qa-accuracy.png" alt="Power-law sampling learns the multi-hop QA task earlier than uniform sampling">
   <figcaption>Figure 4: In multi-hop QA, power-law sampling learns earlier. The same long-tail distribution that slows one-hop coverage can help once the answer depends on composing several relations.</figcaption>
 </figure>
@@ -121,7 +121,7 @@ The question is no longer "is uniform good or bad?" The question is: **what chan
 
 To isolate the mechanism, use the smallest compositional world possible.
 
-**Setup.** There are $d$ skills. Skill $i$ has a hidden sign $w_i^\star$, equal to either $-1$ or $+1$. A training example samples $k$ skills from a distribution $p$, and the label is the product of their hidden signs:
+There are $d$ skills. Skill $i$ has a hidden sign $w_i^\star$, equal to either $-1$ or $+1$. A training example samples $k$ skills from a distribution $p$, and the label is the product of their hidden signs:
 
 $$
 y=\prod_{t=1}^k w^\star_{I_t}.
@@ -138,19 +138,7 @@ This model is not meant to be realistic. Its job is to separate two effects:
 - For $k=1$, learning is local. Each example updates one skill.
 - For $k>1$, learning is global. A skill is useful only when it agrees with the other skills in the product.
 
-State tracking is the transformer version of this same issue. The model has to carry an internal state through several steps: read the current state, apply the next transition, update the state, and repeat. A single transition is easy to memorize. A chain of transitions is where the model must learn an order of operations.
-
-<figure class="powerlaw-figure powerlaw-figure--pair">
-  <div class="powerlaw-panels">
-    <img src="/images/blog/power-law/state-tracking-power-law.png" alt="State tracking as a multi-hop composition problem">
-    <img src="/images/blog/power-law/loss-landscape.png" alt="Uniform and power-law state-tracking loss landscapes">
-  </div>
-  <figcaption>Figure 5: State tracking makes the mechanism concrete. The task is a repeated state update, and the landscape plot shows the same signature as the toy model predicts: uniform training is flatter near initialization, while power-law training gives a clearer descent direction.</figcaption>
-</figure>
-
-Now we can write down the mechanism.
-
-**The hidden variable.** The important quantity is the weighted alignment
+The important quantity is the weighted alignment
 
 $$
 A(w)=\sum_{i=1}^d p_i w_iw_i^\star.
@@ -267,9 +255,29 @@ So the power law creates a staged learning order:
 
 This is why the result is not "skew is always good." It is a tradeoff. Too little asymmetry gives no handle. Too much asymmetry starves the tail. The advantage comes from a learning order: head first, tail later, with the head making the tail easier to learn.
 
+## Does this transfer to transformers?
+
+Yes, at least in the controlled state-tracking task from the paper. State tracking is a clean transformer testbed because it is explicitly a $k$-fold composition problem: the model must carry an internal state through several updates, not just retrieve one isolated fact. It reads the current state, applies the next transition, updates the state, and repeats.
+
+If the toy model is telling the right story, we should see three signatures in transformers. First, uniform training should be flat near initialization because the compositional direction is hard to see. Second, power-law training should create a visible descent direction. Third, the head skills should learn first and then help unlock the tail.
+
+<figure class="powerlaw-figure powerlaw-figure--stacked">
+  <img src="/images/blog/power-law/power-law-composition.png" alt="State tracking accuracy under uniform and power-law training">
+  <img class="powerlaw-figure__inset" src="/images/blog/power-law/state-tracking-power-law.png" alt="Illustration of state tracking as multi-hop composition">
+  <figcaption>Figure 5: In transformer state tracking, power-law training solves the task while uniform training stays near zero in this run. The small illustration below the curve is the task intuition: the model has to carry a state through several hops before answering.</figcaption>
+</figure>
+
+<figure class="powerlaw-figure powerlaw-figure--wide powerlaw-figure--stacked">
+  <img src="/images/blog/power-law/state-tracking-stages.png" alt="State tracking head-to-tail stages under power-law training">
+  <img src="/images/blog/power-law/loss-landscape.png" alt="Uniform and power-law state-tracking loss landscapes">
+  <figcaption>Figure 6: The mechanistic plots match the toy theory. Power law creates staged head-to-tail learning, and the loss landscape has a clearer descent direction than the uniform landscape near initialization.</figcaption>
+</figure>
+
 ## Back to reasoning tasks
 
-The multi-hop QA experiment is the language-like version of the toy model. We generate a synthetic knowledge graph with facts of the form
+State tracking is useful because it isolates the mechanism, but it is still a laboratory task. We also want to know whether the same signature appears in more language-like reasoning tasks. That is why the paper uses two additional settings.
+
+Multi-hop QA tests relation composition in natural-language form. We generate a synthetic knowledge graph with facts of the form
 
 $$
 e_i \xrightarrow{r} e_j,
@@ -301,13 +309,14 @@ Each relation is an atomic skill, but the answer requires several of them in ord
   </div>
 </div>
 
-This is the same distinction as before. In one-hop QA, uniform helps because the bottleneck is seeing each relation often enough. In multi-hop QA, the model also has to learn how relations compose, and that is where the power-law head gives optimization a direction.
+GSM-style arithmetic is a complementary check. It is not about graph relations between entities; it is about composing arithmetic operations through a dependency graph. If power law only helped because of some artifact of relation chaining, this task would be a weaker place to see it. But the same pattern appears.
 
-The same pattern appears in synthetic grade-school-style arithmetic. The model has to compose operations and numbers through a latent dependency graph. Again, changing only the sampling distribution can make the compositional task learn much earlier.
-
-<figure class="powerlaw-figure">
-  <img src="/images/blog/power-law/gsm-modular.png" alt="Power-law training is much faster on modular GSM-style arithmetic">
-  <figcaption>Figure 6: In modular GSM-style arithmetic, power-law sampling reaches high accuracy much earlier. The effect is not limited to relation chaining.</figcaption>
+<figure class="powerlaw-figure powerlaw-figure--wide powerlaw-figure--pair">
+  <div class="powerlaw-panels powerlaw-panels--two-one">
+    <img src="/images/blog/power-law/multi-hop-qa-mechanism.png" alt="Multi-hop QA head-to-tail learning and loss landscapes">
+    <img src="/images/blog/power-law/gsm-modular.png" alt="Power-law training is much faster on modular GSM-style arithmetic">
+  </div>
+  <figcaption>Figure 7: The same mechanism appears beyond state tracking. Multi-hop QA shows head-to-tail learning and a steeper power-law landscape; GSM-style arithmetic shows that the advantage is not limited to relation chaining.</figcaption>
 </figure>
 
 ## An intuition
@@ -335,13 +344,6 @@ The practical lesson is not "make all training data more skewed." It is narrower
 - The lower bound is for uniform or symmetric input distributions and correlational statistical-query learners, which include gradient-like methods but not every possible algorithm.
 - The experiments are synthetic: state tracking, synthetic multi-hop QA, and synthetic GSM-style arithmetic.
 - Other asymmetric distributions might also help. The paper treats power law as a natural, fine-grained source of asymmetry, not the only possible one.
-
-The final multi-hop landscape is the empirical version of the whole story. Power law does not merely resample examples; it changes the path that training can follow.
-
-<figure class="powerlaw-figure powerlaw-figure--wide">
-  <img src="/images/blog/power-law/multi-hop-qa-landscape.png" alt="Multi-hop QA loss landscape under power-law and uniform sampling">
-  <figcaption>Figure 7: In multi-hop QA, power-law training follows a clearer descent path through the landscape. Uniform training is not bad because it is unfair to the tail; it is hard here because the symmetric distribution makes the compositional direction harder to see.</figcaption>
-</figure>
 
 The thing to remember is simple: <strong>for composition, the bottleneck is not only whether the model sees the rare skill; it is whether the model has any aligned direction in which to learn it.</strong>
 
