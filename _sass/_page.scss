@@ -187,17 +187,17 @@
   }
 
   .powerlaw-tldr {
-    margin: 1.8em 0 2.2em;
-    padding: 1.1em 1.25em;
-    border: 1px solid mix(#000, $border-color, 10%);
-    border-left: 6px solid mix(#000, $primary-color, 12%);
-    border-radius: 8px;
-    background: linear-gradient(180deg, mix(#fff, $primary-color, 90%), #fff);
-    box-shadow: 0 2px 14px rgba(#000, 0.06);
+    margin: 1.55em 0 1.8em;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    font-family: Lato, "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
 
     p {
-      margin-bottom: 0.7em;
-      font-size: 1.05em;
+      margin-bottom: 0.55em;
+      font-size: 1em;
     }
 
     ul {
@@ -211,49 +211,43 @@
   }
 
   .powerlaw-tldr__label {
-    margin-bottom: 0.35em;
-    color: mix(#000, $primary-color, 25%);
-    font-family: $sans-serif;
-    font-size: $type-size-6;
+    margin-bottom: 0.45em;
+    color: mix(#000, $text-color, 8%);
+    font-family: inherit;
+    font-size: 1em;
     font-weight: 700;
     letter-spacing: 0;
-    text-transform: uppercase;
+    text-transform: none;
   }
 
   .powerlaw-contrast {
-    margin: 1.6em auto 2.2em;
-    padding: 1.05em 1.15em 1em;
-    border: 1px solid mix(#000, $border-color, 10%);
+    width: 88%;
+    max-width: 760px;
+    margin: 1.5em auto 2.1em;
+    padding: 1em 1.1em;
+    border: 2px solid mix(#000, $text-color, 4%);
     border-radius: 8px;
-    background: linear-gradient(180deg, #fff, mix(#fff, $border-color, 82%));
-    box-shadow: 0 4px 18px rgba(#000, 0.07);
+    background: transparent;
+    box-shadow: none;
+    font-family: Spectral, Georgia, "Times New Roman", serif;
     text-align: center;
 
     p {
       max-width: 560px;
-      margin: 0.85em auto 0;
-      color: mix(#000, $text-color, 10%);
-      font-weight: 700;
+      margin: 0.8em auto 0;
+      color: mix(#fff, $text-color, 18%);
+      font-size: 0.96em;
+      font-weight: 500;
       line-height: 1.45;
     }
   }
 
-  .powerlaw-contrast__kicker {
-    margin-bottom: 0.35em;
-    color: mix(#000, $primary-color, 25%);
-    font-family: $sans-serif;
-    font-size: $type-size-6;
-    font-weight: 700;
-    letter-spacing: 0;
-    text-transform: uppercase;
-  }
-
   .powerlaw-contrast__title {
     max-width: 680px;
-    margin: 0 auto 0.9em;
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 1.35em;
-    font-weight: 700;
+    margin: 0 auto 0.85em;
+    font-family: Spectral, Georgia, "Times New Roman", serif;
+    font-size: 1.18em;
+    font-weight: 600;
     line-height: 1.25;
   }
 
@@ -261,17 +255,17 @@
     display: grid;
     grid-template-columns: minmax(5.5em, 0.75fr) repeat(2, minmax(0, 1fr));
     overflow: hidden;
-    border: 1px solid mix(#000, $border-color, 10%);
-    border-radius: 8px;
-    background: #fff;
+    border: 1px solid mix(#000, $text-color, 18%);
+    border-radius: 0;
+    background: transparent;
     text-align: left;
 
     > div {
       min-width: 0;
-      padding: 0.75em 0.8em;
-      border-right: 1px solid mix(#000, $border-color, 8%);
-      border-bottom: 1px solid mix(#000, $border-color, 8%);
-      font-size: 0.95em;
+      padding: 0.72em 0.75em;
+      border-right: 1px solid mix(#000, $text-color, 18%);
+      border-bottom: 1px solid mix(#000, $text-color, 18%);
+      font-size: 0.93em;
       line-height: 1.35;
     }
 
@@ -286,14 +280,13 @@
 
   .powerlaw-contrast__head,
   .powerlaw-contrast__row {
-    background: mix(#fff, $primary-color, 91%);
+    background: mix(#fff, $border-color, 78%);
     color: mix(#000, $text-color, 12%);
-    font-family: $sans-serif;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .powerlaw-contrast__corner {
-    background: mix(#fff, $primary-color, 96%);
+    background: mix(#fff, $border-color, 86%);
   }
 
   .powerlaw-example {
