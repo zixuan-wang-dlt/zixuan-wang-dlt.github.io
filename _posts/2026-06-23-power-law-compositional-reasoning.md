@@ -1,7 +1,7 @@
 ---
 layout: single
-title: 'Why are "Asymmetric" Power Laws Necessary for Reasoning?'
-description: "Uniform sampling looks like the right fix for long-tail memorization, but compositional reasoning can need the very asymmetry that uniform removes."
+title: "The Hidden Alignment Signal in Power-Law Data"
+description: "A toy model shows why flattening skill frequencies helps memorization but can erase the gradient signal needed for composition."
 date: 2026-06-23
 permalink: /posts/2026/06/power-law-reasoning/
 categories:
@@ -19,41 +19,67 @@ toc: true
 toc_sticky: true
 ---
 
-*Uniform sampling looks like the right fix for long-tail memorization. Power-law sampling looks unfair and wasteful. But for compositional reasoning, the asymmetry that hurts coverage can be exactly what makes gradient descent move.*
+*Flattening a long-tailed training distribution sounds like the fair way to teach rare skills. For one-hop memorization, it often is. But for compositional reasoning, the asymmetry of a power law can create the first usable alignment signal that gradient descent needs.*
 
-**The old intuition.** Natural language has a brutal long tail: a few skills and facts appear constantly, while most appear rarely. The usual data-centric instinct is therefore to reweight or curate toward a more uniform distribution. This sounds especially compelling for rare skills. If a model almost never sees a fact, a relation, or a small reasoning primitive, why would repeating the head help? The head already has enough examples; the tail needs coverage.
+**TL;DR.**
+
+- If language data is viewed as many atomic skills or pieces of knowledge, those skills are naturally long-tailed.
+- Uniform sampling improves coverage of rare skills, so it helps in a one-hop memorization task.
+- In a $k$-hop composition task, the useful gradient is proportional to $p_i A(w)^{k-1}$, where $p_i$ is local skill frequency and $A(w)$ is global alignment with the target.
+- Uniform sampling can make $A(w)\approx r/\sqrt d$ at initialization, so the compositional signal shrinks like $d^{-(k-1)/2}$.
+- Power-law sampling gives the head constant mass, making $A(w)=\Theta(r)$ and giving gradient descent a visible direction before the tail is learned.
+
+Links: [paper](https://arxiv.org/abs/2604.22951), [PDF](https://arxiv.org/pdf/2604.22951), and Eric Michaud's [quanta essay](https://ericjmichaud.com/quanta/) that motivates the "many atomic skills" view of language modeling.
+
+## The question
+
+What should a training distribution do when the world is made of many skills?
+
+Think of a language model as needing many small pieces of competence: remembering that a person has an advisor, applying "+3" inside an arithmetic expression, copying a repeated pattern, composing two relations in a knowledge graph, or tracking a state through several operations. This is the "quanta" picture of language modeling: pretraining loss is reduced by learning many discrete pieces of knowledge or computation, and some of those pieces are useful far more often than others.
+
+That view makes a natural data question sharp. If the useful pieces are long-tailed, should we flatten the distribution so rare skills appear more often?
+
+The simple answer is: **yes for isolated memorization, not necessarily for composition.** Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), studies this split. In synthetic state tracking, multi-hop QA, and grade-school-style arithmetic, training on a power-law distribution can beat training on a uniform distribution, even when test examples are evaluated uniformly.
+
+The reason is not that the tail stops being rare. It is that composition introduces a second bottleneck: before rare skills can be learned efficiently, the model needs a global alignment signal telling it which direction is useful. Uniform sampling improves local coverage but can erase that signal near initialization. Power-law sampling repeats the head often enough to create a handle.
 
 [![Uniform and power-law skill distributions.](/images/blog/power-law/distribution-comparison.png)](/images/blog/power-law/distribution-comparison.pdf)
 
-*Figure 1: Uniform sampling flattens the skill distribution. Power-law sampling keeps a heavy head and a long tail. The puzzle is why this asymmetry can help once examples must be composed.*
+*Figure 1: Uniform sampling flattens skill frequencies. Power-law sampling keeps a heavy head and a long tail. The puzzle is why this asymmetry can help once examples must be composed.*
 
-**The conflict.** Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), starts from the opposite empirical surprise. Across compositional reasoning tasks such as state tracking, multi-hop QA, and multi-step arithmetic, training under a power-law distribution can outperform training under a uniform distribution. The point is not that the tail stops being rare. The point is that power-law sampling creates an asymmetry in the loss landscape, letting the model first acquire high-frequency compositions and then use that progress as a stepping stone toward rare long-tail skills.
+## Why uniform looks right
 
-## Why Uniform Looks Right
+Start with the easiest case: one-hop memorization. A fact might be "Anya's father is Loid," and the query is "Who is the father of Anya?" If a relation or entity appears rarely, the model needs more direct exposure to it. In this setting, uniform sampling is the natural fix because the bottleneck is coverage.
 
-**Single-hop memorization.** Start with the simplest case: memorization. Think of facts like "Anya's father is Loid" and queries like "Who is the father of Anya?" There are entities, relations, and answers. If the relation "father" or some entity appears rarely, the model needs more direct exposure to memorize it. In this setting, uniform sampling is the natural answer because the bottleneck is coverage.
-
-**The sanity check.** That intuition shows up cleanly in a toy one-hop QA experiment. We randomly rank relations, train under either a uniform or power-law distribution, and evaluate exact match. Uniform wins the early race.
+That intuition shows up cleanly in a one-hop QA experiment. We randomly rank relations, train under either a uniform or power-law distribution, and evaluate exact match. Uniform wins the early race.
 
 ![Uniform learns a one-hop memorization task faster than power-law sampling.](/images/blog/power-law/single-hop-memorization.png)
 
 *Figure 2: For one-hop memorization, the usual long-tail intuition is correct. Uniform sampling gives rare relations more exposure and reaches high exact match faster.*
 
-**Why the intuition is reasonable.** This is why "just use a power law" would be a strange story if the task were only memorization. The head is over-sampled; the tail is under-sampled. Uniform data gives every skill a fairer chance. If a model only has to store isolated facts, flattening the distribution is a very reasonable thing to try.
+If the task were only to store isolated facts, "use a power law" would be a strange recommendation. The head is already frequent; the tail needs data. Flattening the distribution gives every skill a fairer chance.
 
-**The compositional twist.** Now make the problem compositional. Instead of asking for one relation, ask for a chain: Alice's advisor is Bob, Bob's institution is Princeton, so what is the institution of Alice's advisor? The model must apply one relation, use the intermediate entity, and then apply another relation. If the task composes $k$ facts, the naive long-tail argument becomes even stronger: if rare facts are already hard to memorize, rare combinations should be worse. It seems uniform should help even more.
+Now make the problem compositional. Instead of asking for one relation, ask for a chain: Alice's advisor is Bob, Bob's institution is Princeton, so what is the institution of Alice's advisor? The model must apply one relation, use the intermediate entity, and then apply another relation. If the task composes $k$ facts, the naive long-tail argument seems even stronger: if rare facts are hard to memorize, rare combinations should be worse.
 
-**But the experiment goes the other way.**
+But the experiment goes the other way.
 
 ![Power-law sampling learns the multi-hop QA task much earlier than uniform sampling.](/images/blog/power-law/multi-hop-qa-accuracy.png)
 
 *Figure 3: In a three-hop QA task, the conclusion flips. The power-law run reaches high accuracy much earlier, even though the final task requires composing facts rather than memorizing one edge.*
 
-**The real question.** So the question is not "is uniform good or bad?" The question is: what changes when we move from memorization to composition?
+So the question is not "is uniform good or bad?" The question is: **what changes when we move from memorization to composition?**
 
-## Composition Needs Global Alignment
+## The minimal model
 
-**The toy world.** To isolate the mechanism, strip the task down to a tiny mathematical model. There are $d$ hidden skills. Skill $i$ has a hidden sign $w_i^\star\in\lbrace -1,+1\rbrace$. A training example samples $k$ skill indices $I_1,\ldots,I_k$ from a distribution $p$, and the label is the product of the corresponding hidden signs:
+To isolate the mechanism, strip the task down to a tiny mathematical world.
+
+There are $d$ hidden skills. Skill $i$ has a hidden sign
+
+$$
+w_i^\star\in\{-1,+1\}.
+$$
+
+A training example samples $k$ skill indices $I_1,\ldots,I_k$ independently from a distribution $p$ on $[d]$. The label is the product of the hidden signs:
 
 $$
 y=f_{w^\star}(X)=\prod_{t=1}^k w^\star_{I_t}.
@@ -71,9 +97,20 @@ $$
 \mathcal L(w)=\frac12\mathbb E_X\left[\left(f_w(X)-f_{w^\star}(X)\right)^2\right].
 $$
 
-**Why this model.** This model is deliberately small. It does not try to be a transformer. Its job is to separate memorization from composition. When $k=1$, an example touches one skill, and learning is coordinate-wise. When $k>1$, the label is a product, so each coordinate is only useful when it aligns with the rest of the product.
+This is deliberately not a transformer. It is the smallest model we need to separate memorization from composition. When $k=1$, each example touches one skill, and learning is coordinate-wise. When $k>1$, the label is a product, so each coordinate is only useful when it aligns with the rest of the product.
 
-**The alignment variable.** Define the weighted alignment
+The assumptions are:
+
+- Skills are fixed and indexed by $i\in[d]$.
+- Each example samples $k$ skills independently from the same distribution $p$.
+- Queries are implicit: the learner only sees the composed label, not intermediate labels or chain-of-thought.
+- Success means recovering the hidden skill vector $w^\star$, up to the sign ambiguity in the even-$k$ theorem.
+- We analyze population gradients first, then use the paper's finite-sample theorem for minibatch gradient descent.
+- The main positive theorem assumes a Zipf distribution $p_i\propto i^{-\alpha}$ with $\alpha>1$, constant even $k$, and Gaussian initialization.
+
+## The baseline mechanism
+
+Define the weighted alignment
 
 $$
 A(w)=\sum_{i=1}^d p_i w_iw_i^\star
@@ -85,28 +122,49 @@ $$
 B(w)=\sum_{i=1}^d p_iw_i^2.
 $$
 
-Let $D=\mathrm{diag}(p_1,\ldots,p_d)$. A direct calculation gives
+The alignment $A(w)$ measures whether the current model agrees with the target on frequently sampled skills. The norm $B(w)$ measures the model's weighted scale.
+
+Because the $k$ sampled indices are independent, the three pieces of the loss are
+
+$$
+\mathbb E[f_w(X)^2]=B(w)^k,\qquad
+\mathbb E[f_w(X)f_{w^\star}(X)]=A(w)^k,\qquad
+\mathbb E[f_{w^\star}(X)^2]=1.
+$$
+
+Therefore
+
+$$
+\mathcal L(w)
+=\frac12\left(B(w)^k-2A(w)^k+1\right).
+$$
+
+This is the equation that makes the model analyzable. The first term is the model's own scale. The second term is the useful agreement with the target. The third term is constant because the target signs have unit magnitude.
+
+Let $D=\mathrm{diag}(p_1,\ldots,p_d)$. Differentiating gives
 
 $$
 \nabla \mathcal L(w)
 =kD\left(B(w)^{k-1}w-A(w)^{k-1}w^\star\right).
 $$
 
-**The gradient.** This equation is the whole story. The diagonal matrix $D$ is the local frequency factor: frequent skills move faster because they appear more often. The term $A(w)^{k-1}w^\star$ is the signal term from the slides: it is the part of the gradient that points toward the hidden skill vector. The exponent $k-1$ is the new difficulty caused by composition. If the current model barely agrees with the target globally, then $A(w)$ is tiny, so this useful signal is tiny for every coordinate.
+The negative gradient has two parts. The $B(w)^{k-1}w$ term pulls down the model's current scale. The $A(w)^{k-1}w^\star$ term is the signal pointing toward the hidden skill vector. The diagonal matrix $D$ is the local frequency factor: frequent skills move faster because they appear more often.
 
-For $k=1$, this global alignment issue disappears:
+For $k=1$, the global alignment issue disappears:
 
 $$
 \nabla \mathcal L(w)=D(w-w^\star).
 $$
 
-**Where composition bites.** This is memorization. The bottleneck is the local factor $p_i$. Rare skills move slowly, and uniform helps by increasing their exposure. For $k>1$, the useful update for coordinate $i$ is proportional to
+This is memorization. Rare skills move slowly because $p_i$ is small, so uniform sampling helps by increasing their exposure.
+
+For $k>1$, the useful part of the negative gradient for coordinate $i$ is proportional to
 
 $$
 p_iA(w)^{k-1}w_i^\star.
 $$
 
-**Two bottlenecks.** Now there are two bottlenecks. The local factor $p_i$ still controls how often skill $i$ appears. But the global factor $A(w)^{k-1}$ controls the strength of the shared compositional signal. If $A(w)$ is small, all skills see a weak signal, including the frequent ones.
+Now there are two bottlenecks. The local factor $p_i$ controls how often skill $i$ appears. The global factor $A(w)^{k-1}$ controls whether any compositional signal is visible at all.
 
 | Task | Useful coordinate signal | Main bottleneck |
 | --- | ---: | --- |
@@ -115,9 +173,9 @@ $$
 
 *Table 1: Uniform sampling helps the local coverage term. Composition also depends on the global alignment term $A(w)^{k-1}$, which can be tiny under uniform data.*
 
-## Why Uniform Can Make Reasoning Flat
+## The error term
 
-**What happens at initialization.** Initialize $w_i(0)\sim\mathcal N(0,r^2)$. Since multiplying by $w_i^\star$ only flips signs, the initial alignment
+Initialize $w_i(0)\sim\mathcal N(0,r^2)$. Since multiplying by $w_i^\star$ only flips signs, the initial alignment
 
 $$
 A(w_0)=\sum_{i=1}^d p_iw_i(0)w_i^\star
@@ -129,39 +187,45 @@ $$
 \mathrm{Var}(A(w_0))=r^2\sum_{i=1}^d p_i^2.
 $$
 
-Under uniform sampling, $p_i=1/d$, so $\sum_i p_i^2=1/d$. A typical initialization has
+Under uniform sampling, $p_i=1/d$, so
 
 $$
-\lvert A(w_0)\rvert\approx \frac{r}{\sqrt d}.
+\sum_{i=1}^d p_i^2=\frac1d.
+$$
+
+A typical initialization has
+
+$$
+|A(w_0)|\approx \frac{r}{\sqrt d}.
 $$
 
 The useful compositional signal is therefore
 
 $$
-\lvert A(w_0)\rvert^{k-1}
+|A(w_0)|^{k-1}
 \approx
 \left(\frac{r}{\sqrt d}\right)^{k-1}.
 $$
 
-**The hidden cost of fairness.** This is the part uniform sampling hides. It gives every skill equal probability, but it also averages the random initial alignment over all $d$ skills. That average is small, and composition raises it to a power. Near initialization, every direction looks almost equally uninformative.
+This is the hidden cost of fairness. Uniform sampling gives every skill equal probability, but it also averages the random initial alignment over all $d$ skills. That average is small, and composition raises it to a power.
 
-**The lower-bound version.** The paper formalizes this with a correlational statistical-query lower bound. Under uniform inputs, a learner using $q$ gradient-like queries must use very fine tolerance to reach constant loss. One slide-level form is
+The paper formalizes this with a correlational statistical-query lower bound. Under uniform inputs, a learner using $q$ gradient-like queries must use very fine tolerance to reach constant loss. One informal form is
 
 $$
 \tau^2 \le \left(\frac{\log(dq)}{d}\right)^{k/2}.
 $$
 
-**The lesson.** The takeaway is simpler than the theorem statement: uniform data creates a symmetric hard instance. That symmetry is harmless for one-hop memorization, but it can hide the target composition from gradient descent.
+Using the usual heuristic $\tau\approx 1/\sqrt n$, this corresponds to a sample requirement on the order of $\widetilde\Omega(d^{k/2})$ when $q$ is not already enormous. The theorem is not saying that every possible algorithm fails. It is saying that the symmetric uniform distribution makes gradient-like statistical queries nearly uninformative.
 
-## What The Power Law Changes
+## The main calculation
 
-**Break the symmetry.** Now sample skills from a power law:
+Now sample skills from a power law:
 
 $$
 p_i=\frac{i^{-\alpha}}{\sum_{j=1}^d j^{-\alpha}}.
 $$
 
-**A larger initial signal.** For fixed $\alpha>1$, the head carries constant-scale probability mass as $d$ grows. The same variance calculation gives
+For fixed $\alpha>1$, the head carries constant-scale probability mass as $d$ grows. The same variance calculation gives
 
 $$
 \mathrm{Var}(A(w_0))
@@ -173,10 +237,10 @@ $$
 which no longer shrinks like $1/d$. At initialization,
 
 $$
-\lvert A(w_0)\rvert\approx \Theta(r)
+|A(w_0)|\approx \Theta(r)
 $$
 
-instead of $r/\sqrt d$. Power law does not make the tail common. It does something more subtle: the repeated head skills create a detectable projection onto the target, so the compositional gradient has a direction to follow.
+instead of $r/\sqrt d$. The head skills create a detectable projection onto the target, so the compositional gradient has a direction to follow.
 
 | Sampling rule | Initial alignment $\lvert A(w_0)\rvert$ | Useful signal $\lvert A(w_0)\rvert^{k-1}$ | What gradient descent sees |
 | --- | ---: | ---: | --- |
@@ -185,46 +249,56 @@ instead of $r/\sqrt d$. Power law does not make the tail common. It does somethi
 
 *Table 2: The head of the power law makes the initial alignment signal much larger. That is why skew can help composition even though it hurts tail coverage.*
 
-**The landscape view.** The loss landscape plot shows the same mechanism in a transformer state-tracking experiment. Around initialization, the uniform run sits in a flat region. The power-law run has a clearer direction of descent.
+The formal positive result is a separation. Under uniform inputs, the paper gives a $d^{\Omega(k)}$-type obstruction for gradient-like learning of $k$-fold composition. Under a Zipf law $p_j\propto j^{-\alpha}$ with $\alpha>1$ and constant even $k$, minibatch gradient descent learns the hidden skill vector with roughly
+
+$$
+\widetilde O\left(\frac{d^{2\alpha}}{\eta\varepsilon}\right)
+$$
+
+samples, suppressing polylogarithmic factors and theorem conditions on batch size, step size, and confidence.
+
+The exponent is not the whole story. The mechanism is the story: the distribution changes the loss landscape.
 
 ![Uniform training is nearly flat near initialization, while power-law training has a clearer descent direction.](/images/blog/power-law/loss-landscape.png)
 
 *Figure 4: Loss over the top two PCA directions of checkpoint trajectories. The zoomed region shows the key difference: uniform training starts in a flat patch, while power-law training sees a descent direction.*
 
-**Why "asymmetric" matters.** This is the sense in which the power law is "necessary" in the toy model: not because Zipf's law is magically optimal, but because some asymmetry is needed to break the flat symmetric landscape. Uniform removes imbalance, but for composition it can also remove the signal.
+## The punchline
 
-## The Head Is A Handle For The Tail
+Uniform sampling fixes the wrong bottleneck first.
 
-**After escape.** Once the model escapes the flat region, the head plays a second role. The coordinate-wise gradient is
+For memorization, the bottleneck is local coverage, so uniform helps. For composition, the first bottleneck can be global alignment, and a power law gives gradient descent a head of frequent skills to grab onto.
+
+The mechanism is not storing better memories. It is making the first compositional direction visible.
+
+## The head is a handle for the tail
+
+After the model escapes the flat region, the head plays a second role. The coordinate-wise gradient is
 
 $$
 \nabla_i \mathcal L(w)
 =kp_i\left(B(w)^{k-1}w_i-A(w)^{k-1}w_i^\star\right).
 $$
 
-**The tail still needs help.** For a tail coordinate $j$, the useful part scales like $p_jA(w)^{k-1}$. The tail still has small $p_j$, so power law has not erased the long-tail cost. But as the head skills learn, they increase
+For a tail coordinate $j$, the useful part still scales like $p_jA(w)^{k-1}$. The tail still has small $p_j$, so power law has not erased the long-tail cost. But as the head skills learn, they increase
 
 $$
 A(w)=\sum_i p_iw_iw_i^\star.
 $$
 
-**Head-to-tail transfer.** That larger $A(w)$ amplifies the useful gradient for every coordinate, including rare ones. In the simplified proof, learning therefore has three stages: power-law asymmetry helps the model escape; head skills raise the global alignment and amplify tail gradients; then the original tail bottleneck returns once the alignment is already high.
+That larger $A(w)$ amplifies the useful gradient for every coordinate, including rare ones. In the simplified proof and the state-tracking experiments, learning has three stages:
+
+- Escape: power-law asymmetry makes the initial landscape less flat.
+- Head-to-tail transfer: frequent skills learn first and raise the global alignment.
+- Tail-limited convergence: once alignment is high, rare skills are again limited by low sampling probability.
 
 ![Power-law state tracking creates a staged head-to-tail learning process.](/images/blog/power-law/state-tracking-power-law.png)
 
 *Figure 5: In state tracking, the learning order follows the theory: escape, head-to-tail transfer, and then tail-limited convergence. The head does not merely learn first; it changes the gradient seen by the tail.*
 
-**The theorem.** The theorem says this more formally. Under uniform inputs, the SQ lower bound gives a $d^{\Omega(k)}$-type obstruction for gradient-like learning of $k$-fold composition. Under a power law $p_j\propto j^{-\alpha}$ with $\alpha>1$ and constant $k$, minibatch SGD learns the hidden skill vector using roughly
+## Back to multi-hop QA and math
 
-$$
-\widetilde O(d^{2\alpha})
-$$
-
-samples in the minimalist model. The exponent is not the main message. The main message is that the distribution changes the optimization problem: uniform data creates a symmetric hard instance, while power-law data induces a learning order.
-
-## Back To Multi-Hop QA
-
-**A language-like test.** The multi-hop QA experiment is the clean language-like version of the same story. We generate a synthetic knowledge graph with facts of the form
+The multi-hop QA experiment is the language-like version of the same story. We generate a synthetic knowledge graph with facts of the form
 
 $$
 e_i \xrightarrow{r} e_j,
@@ -239,11 +313,11 @@ e_0 \xrightarrow{r_1} e_1
 \xrightarrow{r_k} e_k.
 $$
 
-**Why it is compositional.** For example: Alice's advisor is Bob; Bob's institution is Princeton; what is the institution of Alice's advisor? The model must compose facts internally. It cannot solve the task by memorizing one edge.
+For example: Alice's advisor is Bob; Bob's institution is Princeton; what is the institution of Alice's advisor? Each relation is an atomic skill, but the answer requires using several of them in order. The model cannot solve the task by memorizing one edge.
 
-**Reading the plots together.** This is why the opening two plots should be read together. In one-hop QA, uniform wins because the bottleneck is coverage. In multi-hop QA, power law wins because the bottleneck is first finding a compositional direction. The same long tail is bad for direct memorization and useful for breaking symmetry in reasoning.
+This is why the opening two plots should be read together. In one-hop QA, uniform wins because the bottleneck is coverage. In multi-hop QA, power law wins because the bottleneck is first finding a compositional direction. The same long tail is bad for direct memorization and useful for breaking symmetry in reasoning.
 
-**GSM-style arithmetic.** The same pattern also appears in arithmetic data generated from dependency graphs, closer in spirit to GSM-style reasoning. Here the model is not just choosing among relations. It has to compose operations and numbers through a latent computation graph. In both non-modular and modular versions, power-law training reaches high test accuracy earlier than uniform training.
+The same pattern appears in arithmetic data generated from dependency graphs, closer in spirit to GSM-style reasoning. Here the model must compose operations and numbers through a latent computation graph. In both non-modular and modular versions, power-law training reaches high test accuracy earlier than uniform training.
 
 ![Power-law training reaches high test accuracy earlier on non-modular GSM-style arithmetic.](/images/blog/power-law/gsm-nonmod.png)
 
@@ -253,16 +327,41 @@ $$
 
 *Figure 7: Modular GSM-style arithmetic. Uniform sampling remains much slower, while power-law training quickly reaches near-perfect accuracy.*
 
-## What This Does Not Say
+## An intuition
 
-**The boundary.** The claim is not that more skew is always better. Power law does not remove the tail; rare skills still receive fewer updates. It also does not mean uniform is bad in general. For one-hop memorization, the plot at the top shows the opposite. The claim is narrower: when the task requires composition, asymmetry can create the gradient signal that uniform data removes.
+Uniform sampling is like giving every landmark on a map the same font size. That is fair if the goal is to inspect every landmark one by one.
 
-**The analogy.** A useful way to remember the result is to think about landmarks. A perfectly uniform map gives every landmark equal space, but it may not give you an anchor. A power law repeats a few landmarks again and again. That repetition looks wasteful if all you care about is coverage, but it gives you a coordinate system. In the model, the coordinate system is $A(w)$, and the strength of the compositional signal is $A(w)^{k-1}$.
+Power-law sampling is like drawing a few major landmarks very large. That looks unfair if all you care about is coverage, but it gives you a coordinate system. Once you know where the large landmarks are, smaller locations become easier to place.
 
-**The practical question.** So the question is not only: does the tail get enough examples? It is also: what learning order does this distribution create?
+In the model, the coordinate system is the alignment $A(w)$. The strength of the compositional signal is $A(w)^{k-1}$.
+
+## What this suggests in practice
+
+The practical lesson is not "make all training data more skewed." It is narrower and more useful.
+
+First, evaluate memorization and composition separately. A distribution that improves one-hop recall can hurt implicit multi-hop learning, because the two tasks have different bottlenecks.
+
+Second, do not treat repeated head examples as automatically wasted. In a compositional task, frequent skills can serve as anchors that make the loss landscape navigable.
+
+Third, the exponent matters. The paper's ablations show the expected tradeoff: larger $\alpha$ can speed early head learning, but too much skew slows the final tail stage because rare skills become too rare.
+
+Finally, the result suggests a different way to think about data curation. Instead of asking only "does the tail get enough examples?", also ask "what learning order does this distribution induce?"
+
+## What this does not show
+
+- The result does not say that power law is always better. In the one-hop experiment, uniform sampling learns faster.
+- The theorem is for a minimalist $k$-multiplicative composition model, not a full transformer theory.
+- The positive theorem assumes a Zipf distribution with $\alpha>1$, constant even $k$, Gaussian initialization, and a learner matched to the compositional structure.
+- The lower bound is for uniform or symmetric input distributions and correlational statistical-query learners, which include gradient-like methods but not every possible algorithm.
+- The experiments are synthetic: state tracking, synthetic multi-hop QA, and synthetic GSM-style arithmetic.
+- Power law does not remove the tail. In the final stage, rare skills are still slow because they are sampled rarely.
+- Other asymmetric distributions might also help. The paper treats power law as a natural and fine-grained source of asymmetry, not as the only possible solution.
 
 ## References
 
 - Zixuan Wang, Xingyu Dang, Jason D. Lee, and Kaifeng Lyu. [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951). arXiv, 2026.
+- Eric J. Michaud. [On neural scaling and the quanta hypothesis](https://ericjmichaud.com/quanta/). 2026.
+- Eric J. Michaud, Ziming Liu, Uzay Girit, and Max Tegmark. [The Quantization Model of Neural Scaling](https://arxiv.org/abs/2303.13506). NeurIPS, 2023.
+- Sanjeev Arora and Anirudh Goyal. [A Theory for Emergence of Complex Skills in Language Models](https://arxiv.org/abs/2307.15936). arXiv, 2023.
 - Yoshua Bengio, Jerome Louradour, Ronan Collobert, and Jason Weston. [Curriculum Learning](https://doi.org/10.1145/1553374.1553380). ICML, 2009.
 - Aaron Clauset, Cosma Rohilla Shalizi, and M. E. J. Newman. [Power-law distributions in empirical data](https://doi.org/10.1137/070710111). SIAM Review, 2009.
