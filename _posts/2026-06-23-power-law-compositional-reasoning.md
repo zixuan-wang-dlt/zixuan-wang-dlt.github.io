@@ -23,31 +23,10 @@ toc_sticky: true
 *Uniform sampling sounds obviously right for long-tail learning: rare skills need more examples. But for compositional reasoning, that intuition can be exactly wrong. In our toy model and transformer experiments, uniform data can make the loss landscape nearly flat near initialization. Power-law data breaks the symmetry and creates a slope. In short: uniform helps coverage; power law creates slope.*
 
 <div class="powerlaw-tldr">
-  <div class="powerlaw-tldr__label">Summary</div>
-  <p><strong>Uniform fixes exposure. Power law fixes the landscape.</strong></p>
-  <ul>
-    <li>For one-hop memorization, the usual long-tail story is right: rare facts need more exposure, so uniform sampling helps.</li>
-    <li>For multi-hop composition, exposure is not the only bottleneck. Gradient descent also needs a direction to follow.</li>
-    <li>Uniform sampling can wash out that direction near initialization. Power-law sampling puts enough mass on the head to tilt the landscape.</li>
-    <li>The head-to-tail story comes after this escape: first create the slope, then let learned head skills help the tail.</li>
-  </ul>
+  <p><strong>Short version.</strong> Uniform is great when the job is to see every rare fact. But composition first needs something else: a slope. Power-law data can give gradient descent a first downhill direction.</p>
 </div>
 
-<div class="powerlaw-contrast" aria-label="Uniform fixes exposure, power law fixes the landscape">
-  <div class="powerlaw-contrast__title">Uniform helps coverage. Power law creates slope.</div>
-  <div class="powerlaw-contrast__grid">
-    <div class="powerlaw-contrast__corner"></div>
-    <div class="powerlaw-contrast__head">Memorization</div>
-    <div class="powerlaw-contrast__head">Composition</div>
-    <div class="powerlaw-contrast__row">Uniform</div>
-    <div>Better tail coverage</div>
-    <div>Flat symmetric landscape</div>
-    <div class="powerlaw-contrast__row">Power law</div>
-    <div>Worse tail coverage</div>
-    <div>Visible descent direction</div>
-  </div>
-  <p>Power law is not about seeing the tail more. It is about making the first useful direction visible.</p>
-</div>
+<p class="powerlaw-opening-line">The point is not that power law secretly covers the tail better. It does not. It helps because it can make the first useful direction visible.</p>
 
 Links: [paper](https://arxiv.org/abs/2604.22951), [PDF](https://arxiv.org/pdf/2604.22951), and Eric Michaud's [quanta essay](https://ericjmichaud.com/quanta/). Unless noted otherwise, the experimental figures below are from our paper and talk slides.
 
