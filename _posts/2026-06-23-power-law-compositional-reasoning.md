@@ -20,18 +20,34 @@ toc: true
 toc_sticky: true
 ---
 
-*Uniform sampling looks like the fair way to teach rare skills. For one-hop memorization, it is often right. But for compositional reasoning, uniform data can make the loss landscape look flat to gradient descent. Power-law data breaks the symmetry and creates a slope.*
+*Uniform sampling sounds obviously right for long-tail learning: rare skills need more examples. But for compositional reasoning, that intuition can be exactly wrong. In our toy model and transformer experiments, uniform data can make the loss landscape nearly flat near initialization. Power-law data breaks the symmetry and creates a slope. In short: uniform helps coverage; power law creates slope.*
 
 <div class="powerlaw-tldr">
   <div class="powerlaw-tldr__label">TL;DR</div>
-  <p><strong>For memorization, uniform fixes exposure. For composition, uniform can erase direction.</strong></p>
+  <p><strong>Uniform fixes exposure. Power law fixes the landscape.</strong></p>
   <ul>
-    <li>If language modeling is viewed as learning many atomic skills or pieces of knowledge, those skills are naturally long-tailed.</li>
-    <li>Uniform sampling improves direct coverage of rare skills, so it helps in one-hop memorization.</li>
-    <li>Composition has a different bottleneck: the initial landscape can be symmetric, isotropic, and nearly flat.</li>
-    <li>Power-law sampling breaks that symmetry, makes the initial gradient much larger, and gives SGD a descent direction.</li>
-    <li>Head-to-tail learning is stage II. Stage I is escape from the flat landscape.</li>
+    <li>One-hop memorization is mostly a coverage problem, so uniform sampling helps.</li>
+    <li>Composition is also a geometry problem: uniform sampling can make the initial landscape symmetric and flat.</li>
+    <li>Power-law sampling gives the head enough mass to break symmetry and create a slope.</li>
+    <li>Head-to-tail learning is stage II. Stage I is escaping the flat landscape.</li>
   </ul>
+</div>
+
+<div class="powerlaw-contrast" aria-label="Uniform fixes exposure, power law fixes the landscape">
+  <div class="powerlaw-contrast__kicker">The whole post in one table</div>
+  <div class="powerlaw-contrast__title">Uniform helps coverage. Power law creates slope.</div>
+  <div class="powerlaw-contrast__grid">
+    <div class="powerlaw-contrast__corner"></div>
+    <div class="powerlaw-contrast__head">Memorization</div>
+    <div class="powerlaw-contrast__head">Composition</div>
+    <div class="powerlaw-contrast__row">Uniform</div>
+    <div>Better tail coverage</div>
+    <div>Flat symmetric landscape</div>
+    <div class="powerlaw-contrast__row">Power law</div>
+    <div>Worse tail coverage</div>
+    <div>Visible descent direction</div>
+  </div>
+  <p>Power law is not about seeing the tail more. It is about seeing a direction.</p>
 </div>
 
 Links: [paper](https://arxiv.org/abs/2604.22951), [PDF](https://arxiv.org/pdf/2604.22951), and Eric Michaud's [quanta essay](https://ericjmichaud.com/quanta/). Unless noted otherwise, the experimental figures below are from our paper and talk slides.
@@ -120,7 +136,7 @@ But the experiment goes the other way.
 
 <figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/multi-hop-qa-accuracy.png" alt="Power-law sampling learns the multi-hop QA task earlier than uniform sampling">
-  <figcaption>Figure 4: In multi-hop QA, power-law sampling learns earlier. The same long-tail distribution that slows one-hop coverage can help once the answer depends on composing several relations.</figcaption>
+  <figcaption>Figure 4: The one-hop result says "uniform helps coverage." The multi-hop result says "coverage is not enough."</figcaption>
 </figure>
 
 The question is no longer "is uniform good or bad?" The question is: **what changes when a model has to compose skills rather than recall them one at a time?**
@@ -129,14 +145,16 @@ The question is no longer "is uniform good or bad?" The question is: **what chan
 
 A useful abstraction is $k$-fold composition. Think of each relation, operation, or state update as a function. A reasoning example asks the model to apply several functions in order before answering.
 
-State tracking is a clean synthetic version of this idea, related to the DePO-style testbed in Allen-Zhu's [*Physics of Language Models: Part 4.1*](https://ssrn.com/abstract=5240330) and to prior work on the limits and curriculum structure of compositional transformer learning, including Merrill and Sabharwal's work on [transformer parallelism limits](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log) and [chain-of-thought expressivity](https://arxiv.org/abs/2310.07923), plus our earlier [easy-to-hard curriculum study](https://arxiv.org/abs/2505.23683). The model observes a sequence of updates and must output the final state. It is not enough to know one update rule; the model has to carry an internal state through multiple steps.
+State tracking is a clean synthetic testbed for implicit composition, related to Allen-Zhu's [DePO/canon-layer setup](https://ssrn.com/abstract=5240330), Merrill and Sabharwal's transformer limits work ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)), and our [curriculum study](https://arxiv.org/abs/2505.23683). The model observes updates and must output the final state, so knowing one update rule is not enough; it has to carry state through several steps.
 
-In our state-tracking experiment, this difference is stark: with the same implicit composition task, the uniform run stays near zero accuracy, while the power-law run suddenly escapes and solves the task. That is the first hint that the distribution is not merely changing coverage; it is changing the optimization geometry.
+In our experiment, the difference is stark: uniform training stays near zero accuracy, while power-law training escapes and solves the task. That is the first hint that the distribution is changing optimization geometry, not just coverage.
 
-<figure class="powerlaw-figure powerlaw-figure--stacked">
-  <img src="/images/blog/power-law/power-law-composition.png" alt="State tracking accuracy under uniform and power-law training">
-  <img class="powerlaw-figure__inset" src="/images/blog/power-law/state-tracking-power-law.png" alt="Illustration of state tracking as multi-hop composition">
-  <figcaption>Figure 5: State tracking turns multi-hop reasoning into a controlled transformer task. In this run, power-law training solves the task while uniform training stays near zero; the illustration below the curve shows the core operation: carry a state through several hops before answering.</figcaption>
+<figure class="powerlaw-figure powerlaw-figure--pair powerlaw-figure--state">
+  <div class="powerlaw-panels powerlaw-panels--state">
+    <img src="/images/blog/power-law/power-law-composition.png" alt="State tracking accuracy under uniform and power-law training">
+    <img src="/images/blog/power-law/state-tracking-power-law.png" alt="Illustration of state tracking as multi-hop composition">
+  </div>
+  <figcaption>Figure 5: Uniform stays flat; power law escapes. State tracking is the controlled transformer version of the composition problem.</figcaption>
 </figure>
 
 Starting from this synthetic task, we confirmed the same qualitative finding: changing the training distribution can turn an apparently unlearnable implicit composition task into a learnable one. But transformers are still hard to analyze directly: attention, layers, finite samples, and representation learning are all mixed together. To understand the mechanism, we now strip the task down to the smallest model that still contains composition.
@@ -273,9 +291,9 @@ The toy model makes two concrete predictions for state tracking. First, near ini
 
 **Stage I: escaping the flat region.** We visualize the loss over the top two PCA directions of checkpoint trajectories. Under uniform training, the initialization region is nearly flat in this subspace. Under power-law training, the trajectory sees a clearer descent direction.
 
-<figure class="powerlaw-figure powerlaw-figure--wide">
+<figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/loss-landscape.png" alt="Uniform and power-law state-tracking loss landscapes">
-  <figcaption>Figure 6: The state-tracking loss landscape matches the toy prediction: uniform training is flatter near initialization, while power-law training creates a more visible descent direction.</figcaption>
+  <figcaption>Figure 6: Uniform gives every skill equal weight, but leaves gradient descent nearly directionless. Power law is asymmetric enough to create a slope.</figcaption>
 </figure>
 
 This is the paper's main mechanism in picture form. The distribution does not merely change which examples are sampled. It changes the shape of the loss landscape near initialization.
@@ -369,7 +387,9 @@ The practical lesson is not "make all training data more skewed." It is narrower
 - The experiments are synthetic: state tracking, synthetic multi-hop QA, and synthetic GSM-style arithmetic.
 - Other asymmetric distributions might also help. The paper treats power law as a natural, fine-grained source of asymmetry, not the only possible one.
 
-The thing to remember is simple: <strong>power law does not just change what the model sees. It changes the shape of the loss it has to descend.</strong>
+The surprising lesson is that fairness in the data distribution can create symmetry in the loss landscape, and symmetry can be deadly for composition. Power law helps not because the tail becomes common, but because the head breaks the symmetry first. For reasoning, the first problem is not always seeing every skill. Sometimes it is finding any slope at all.
+
+The thing to remember is simple: <strong>uniform fixes exposure. Power law fixes the landscape.</strong>
 
 ## References
 
