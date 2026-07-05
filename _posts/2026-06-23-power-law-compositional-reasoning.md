@@ -205,13 +205,6 @@ This is the landscape mechanism in one line.
 
 The factor $p_i$ is local coverage: how often skill $i$ appears. Uniform distribution helps this term for scarce long-tail skills. The factor $A(w)^{k-1}$ is the initial learning signal of composition. Uniform distribution can make this signal vanish with dimension because the function class is too symmetric.
 
-| Task | What must be large? | What uniform distribution helps | What uniform distribution can hurt |
-| --- | --- | --- | --- |
-| One-hop memorization | Local exposure $p_i$ | Tail coverage | Usually nothing essential |
-| $k$-multiplicative composition | Exposure and initial learning signal $A(w)^{k-1}$ | Tail coverage | The initial descent direction |
-
-<p class="table-caption">Table 1: Memorization is mostly a coverage problem. Compositional reasoning is coverage plus a non-flat loss landscape.</p>
-
 ## Why symmetry is the problem
 
 **Symmetry hides the signal.** At random initialization, the model has a small accidental similarity with the ground truth. The question is whether the training distribution turns this similarity into a useful initial gradient or averages it away.
@@ -243,13 +236,6 @@ $$
 $$
 
 Scarce long-tail skills are still rare. But high-frequency skills are frequent enough to induce a beneficial asymmetry.
-
-| Training distribution | Initial similarity | What gradient descent sees |
-| --- | ---: | --- |
-| Uniform distribution | $r/\sqrt d$ | initial flat region |
-| Power-law distribution | $\Theta(r)$ | clearer descent direction |
-
-<p class="table-caption">Table 2: Power-law distribution helps by improving the initial loss landscape, not by making rare skills common.</p>
 
 The formal results in the paper sharpen this picture. Under uniform distribution, a correlational statistical query (CSQ) lower bound shows that learning requires $d^{\Omega(k)}$ samples or runtime. This is the theorem-level version of the initial-flat-region story: gradient-based training suffers from a computational gap. Under a Zipf distribution with $\alpha>1$, minibatch gradient descent learns the minimalist skill-composition task with about $\widetilde O(d^{2\alpha})$ samples, up to theorem conditions on step size, batch size, and accuracy.
 
