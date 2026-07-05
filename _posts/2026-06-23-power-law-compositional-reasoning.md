@@ -20,9 +20,9 @@ toc: true
 toc_sticky: true
 ---
 
-*A common intuition suggests that reweighting data towards a uniform distribution should help models learn long-tail skills. For compositional reasoning tasks, we find the opposite: training under a power-law distribution consistently outperforms training under a uniform distribution. Power-law distribution induces a beneficial asymmetry that improves the pathological loss landscape, while uniform distribution suffers from symmetry and a much smaller initial learning signal.*
+<p class="powerlaw-spoiler"><strong>Spoiler:</strong> A common intuition suggests that reweighting data towards a uniform distribution should help models learn long-tail skills. For compositional reasoning tasks, we find the opposite: training under a power-law distribution consistently outperforms training under a uniform distribution. Power-law distribution induces a beneficial asymmetry that improves the pathological loss landscape, while uniform distribution suffers from symmetry and a much smaller initial learning signal.</p>
 
-Links: [paper](https://arxiv.org/abs/2604.22951), [PDF](https://arxiv.org/pdf/2604.22951), and Eric Michaud's [quanta essay](https://ericjmichaud.com/quanta/).
+<p class="powerlaw-links">Links: <a href="https://arxiv.org/abs/2604.22951">paper</a>, <a href="https://arxiv.org/pdf/2604.22951">PDF</a>, and Eric Michaud's <a href="https://ericjmichaud.com/quanta/">quanta essay</a>.</p>
 
 ## The question
 
