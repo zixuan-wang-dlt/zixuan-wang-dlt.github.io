@@ -1,7 +1,7 @@
 ---
 layout: single
-title: "Why Asymmetric Power Laws Help Reasoning?"
-description: "Power-law distribution induces a beneficial asymmetry that improves the pathological loss landscape for compositional reasoning tasks."
+title: "Why Do Asymmetric Power Laws Help Reasoning?"
+description: "Uniform distribution improves long-tail coverage, but power-law distribution can improve the loss landscape for compositional reasoning by breaking symmetry."
 date: 2026-06-23
 permalink: /posts/2026/06/power-law-reasoning/
 categories:
@@ -20,7 +20,7 @@ toc: true
 toc_sticky: true
 ---
 
-<p class="powerlaw-spoiler"><strong>Spoiler:</strong> A common intuition suggests that reweighting data towards a uniform distribution should help models learn long-tail skills. For compositional reasoning tasks, we find the opposite: training under a power-law distribution consistently outperforms training under a uniform distribution. Power-law distribution induces a beneficial asymmetry that improves the pathological loss landscape, while uniform distribution suffers from symmetry and a much smaller initial learning signal.</p>
+<p class="powerlaw-spoiler"><strong>Spoiler:</strong> Uniform distribution fixes coverage. Power-law distribution fixes the landscape. For one-hop memorization, making skills more uniform helps rare facts get seen. For compositional reasoning, the bottleneck changes: uniform distribution can make the loss landscape symmetric and nearly flat near initialization, while power-law distribution breaks this symmetry and creates the first useful descent signal.</p>
 
 <p class="powerlaw-links">Links: <a href="https://arxiv.org/abs/2604.22951">paper</a>, <a href="https://arxiv.org/pdf/2604.22951">PDF</a>, and Eric Michaud's <a href="https://ericjmichaud.com/quanta/">quanta essay</a>.</p>
 
@@ -55,7 +55,7 @@ Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](h
 
 **But if the task is multi-hop?** This is where the long-tail intuition starts to wobble. A multi-hop example is not just a rare item; it requires composition of several skills.
 
-The answer is not merely that high-frequency skills benefit scarce long-tail skills. The paper's point is sharper: uniform distribution induces hardness for composition tasks because of symmetry and a pathological loss landscape. Power-law distribution induces a beneficial asymmetry, improves the initial loss landscape, and gives gradient descent a clearer descent direction before the model has learned the skills.
+The answer is not merely that high-frequency skills benefit scarce long-tail skills. The paper's point is sharper: uniform distribution induces hardness for composition tasks because of symmetry and a pathological loss landscape. Power-law distribution induces a beneficial asymmetry, improves the initial loss landscape, and gives gradient descent a clearer descent direction before the model has learned the skills. Only after this escape do learned high-frequency skills become useful stepping stones for scarce long-tail skills.
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <a href="/images/blog/power-law/distribution-comparison.pdf">
