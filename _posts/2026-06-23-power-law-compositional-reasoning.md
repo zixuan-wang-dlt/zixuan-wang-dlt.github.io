@@ -28,9 +28,11 @@ toc_sticky: true
 
 If language data consists of many latent skills and knowledge pieces, should we make their training frequencies uniform?
 
-The tempting answer is yes. Natural language follows a power-law distribution: a few skills and knowledge pieces appear frequently, while most long-tail skills appear at very low frequency. If rare skills are the problem, shifting the data distribution towards a uniform distribution seems like the natural fix.
+The tempting answer is yes. Natural language follows a power-law distribution: a few skills and knowledge pieces appear frequently, while most long-tail skills appear at very low frequency. Under this view, rare skills are observed only when the dataset becomes very large, while the most frequent skills may be repeatedly sampled far beyond what is necessary for learning them.
 
-Michaud's quanta view is a useful way to motivate the setup: pretraining may involve many discrete modules, some retrieving knowledge and some implementing small algorithms, with very different use frequencies. One of the assumptions is:
+If we knew the underlying skill distribution and had the budget to curate data, a natural move would be to shift the training data towards a uniform distribution over skills: up-weight low-frequency skills, down-weight high-frequency ones, and give every skill a fairer chance.
+
+Michaud's quanta view is one way to make this setup concrete: pretraining may involve many discrete modules, some retrieving knowledge and some implementing small algorithms, with very different use frequencies. One of the assumptions is:
 
 <blockquote class="powerlaw-pullquote">
   <p>The "use frequencies" of the quanta naturally follow a power law.</p>
@@ -51,7 +53,7 @@ Michaud's quanta view is a useful way to motivate the setup: pretraining may inv
   <figcaption>Figure 1: Michaud's quanta picture has two parts: individual skills can appear as sharp learning transitions, and their use frequencies form a long-tailed sequence. Our question is what changes when the task requires composition of several skills. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
 </figure>
 
-Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), then asks a more optimization-focused question: what happens when the model must combine multiple reasoning skills to solve a problem?
+Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), asks when this uniform-distribution intuition breaks. We focus on compositional reasoning tasks, where the model must combine multiple skills before answering.
 
 **But if the task is multi-hop?** This is where the long-tail intuition starts to wobble. A multi-hop example is not just a rare item; it requires composition of several skills.
 
@@ -113,27 +115,9 @@ But the experiment goes the other way.
 
 The question is no longer "is uniform distribution good or bad?" The question is: **what changes when a model has to compose skills rather than recall them one at a time?**
 
-## A clean state-tracking testbed
+## A minimalist model of skill composition
 
-A useful abstraction is $k$-fold composition. Think of each relation, operation, or state update as a function. A compositional reasoning example asks the model to apply several functions in order before answering.
-
-State tracking is a clean synthetic testbed for implicit composition, related to Allen-Zhu's [DePO/canon-layer setup](https://ssrn.com/abstract=5240330), Merrill and Sabharwal's transformer limits work ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)), and our [curriculum study](https://arxiv.org/abs/2505.23683). The model observes updates and must output the final state, so knowing one update rule is not enough; it has to carry state through several steps.
-
-In our experiment, the difference is stark: training under uniform distribution stays near zero accuracy, while training under power-law distribution escapes the initial flat region and solves the task. That is the first hint that the training distribution changes the loss landscape, not just coverage.
-
-<figure class="powerlaw-figure powerlaw-figure--pair powerlaw-figure--state">
-  <div class="powerlaw-panels powerlaw-panels--state">
-    <img src="/images/blog/power-law/power-law-composition.png" alt="State tracking accuracy under uniform distribution and power-law distribution">
-    <img src="/images/blog/power-law/state-tracking-power-law.png" alt="Illustration of state tracking as multi-hop composition">
-  </div>
-  <figcaption>Figure 5: Uniform distribution fails to escape; power-law distribution learns the task. State tracking is the controlled transformer version of implicit multi-hop composition.</figcaption>
-</figure>
-
-Starting from this synthetic task, we confirmed the same qualitative finding: only changing the training distribution can turn an apparently unlearnable implicit composition task into a learnable one. But transformers are still hard to analyze directly: attention, layers, finite samples, and representation learning are entangled. To understand the mechanism, we now strip the task down to the smallest model that still contains skill composition.
-
-## Why uniform distribution induces hardness
-
-To isolate the landscape mechanism, the paper introduces a minimalist skill-composition task: **$k$-multiplicative composition**.
+Analyzing transformers trained on compositional reasoning tasks is hard: attention, layers, finite samples, and representation learning are all entangled. To isolate the landscape mechanism, the paper introduces a minimalist skill-composition task: **$k$-multiplicative composition**.
 
 There are $d$ skills. Skill $i$ has a hidden sign $w_i^\star$, equal to either $-1$ or $+1$. A training example samples $k$ skills from a distribution $p$, and the label is the product of their hidden signs:
 
@@ -147,7 +131,9 @@ $$
 f_w(X)=\prod_{t=1}^k w_{I_t}.
 $$
 
-This model is not meant to be realistic. Its job is to separate two effects:
+This model is not meant to be realistic. The simplification is intentional: the hidden skills are fixed, the sampled skills are independent, and all transformer machinery is stripped away. What remains is the part we want to isolate: composition under a training distribution.
+
+Its job is to separate two effects:
 
 - For $k=1$, learning is local. Each example updates one skill.
 - For $k>1$, learning is global. A skill is useful only when it agrees with the other skills in the product.
@@ -205,7 +191,7 @@ This is the landscape mechanism in one line.
 
 The factor $p_i$ is local coverage: how often skill $i$ appears. Uniform distribution helps this term for scarce long-tail skills. The factor $A(w)^{k-1}$ is the initial learning signal of composition. Uniform distribution can make this signal vanish with dimension because the function class is too symmetric.
 
-## Why symmetry is the problem
+## Why the landscape changes
 
 **Symmetry hides the signal.** At random initialization, the model has a small accidental similarity with the ground truth. The question is whether the training distribution turns this similarity into a useful initial gradient or averages it away.
 
@@ -229,7 +215,7 @@ $$
 
 This is the hidden cost of uniform distribution. It gives every skill equal coverage, but near initialization it also washes out the asymmetry gradient descent needs to escape the initial flat region.
 
-Under a power-law distribution, high-frequency skills carry constant-scale probability mass. For $p_i\propto i^{-\alpha}$ with $\alpha>1$, the quantity $\sum_i p_i^2$ no longer shrinks like $1/d$; in the large-$d$ limit it behaves like a constant such as $\zeta(2\alpha)/\zeta(\alpha)^2$. The same random initialization now has
+**Power-law distribution breaks the symmetry.** Under a power-law distribution, high-frequency skills carry constant-scale probability mass. For $p_i\propto i^{-\alpha}$ with $\alpha>1$, the quantity $\sum_i p_i^2$ no longer shrinks like $1/d$; in the large-$d$ limit it behaves like a constant such as $\zeta(2\alpha)/\zeta(\alpha)^2$. The same random initialization now has
 
 $$
 \lvert A(w_0)\rvert\approx \Theta(r).
@@ -243,9 +229,23 @@ In other words, the first step is not the learning of scarce long-tail skills. I
 
 **Uniform distribution removes imbalance. Compositional reasoning sometimes needs beneficial asymmetry to improve the pathological loss landscape.**
 
-## What happens inside the transformer?
+## Does the toy mechanism show up in transformers?
 
-The minimalist model makes two concrete predictions for state tracking. First, near initialization, training under uniform distribution should have a flatter loss landscape because the compositional signal is hidden by symmetry. Second, after escape, learned high-frequency skills should increase the gradient signal for scarce long-tail skills.
+The toy model predicts two things. First, near initialization, uniform distribution should create a flatter loss landscape because the compositional signal is hidden by symmetry. Second, after the model escapes this region, learned high-frequency skills should strengthen the gradient signal for scarce long-tail skills.
+
+To check this in a transformer, the paper uses state tracking as a clean synthetic testbed for implicit composition. The task is related to Allen-Zhu's [DePO/canon-layer setup](https://ssrn.com/abstract=5240330), Merrill and Sabharwal's transformer limits work ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)), and our [curriculum study](https://arxiv.org/abs/2505.23683). The model observes a sequence of updates and must output the final state. Knowing one update rule is not enough; the model has to carry state through several steps.
+
+In this controlled setting, only changing the training distribution can turn an apparently unlearnable implicit composition task into a learnable one. Under uniform distribution, the transformer stays near zero accuracy. Under power-law distribution, it escapes the initial flat region and solves the task.
+
+<figure class="powerlaw-figure powerlaw-figure--pair powerlaw-figure--state">
+  <div class="powerlaw-panels powerlaw-panels--state">
+    <img src="/images/blog/power-law/power-law-composition.png" alt="State tracking accuracy under uniform distribution and power-law distribution">
+    <img src="/images/blog/power-law/state-tracking-power-law.png" alt="Illustration of state tracking as multi-hop composition">
+  </div>
+  <figcaption>Figure 5: Uniform distribution fails to escape; power-law distribution learns the task. State tracking is the controlled transformer version of implicit multi-hop composition.</figcaption>
+</figure>
+
+This makes state tracking a useful place to look inside the optimization process. The goal is not to prove a transformer theorem from a plot. The goal is to check whether the signatures predicted by the minimalist model appear in a real transformer training run.
 
 **Stage I: escaping the flat region.** We visualize the loss over the top two PCA directions of checkpoint trajectories. Under uniform distribution, the initialization region is nearly flat in this subspace. Under power-law distribution, the loss landscape has a steeper slope as the descent direction.
 
@@ -256,9 +256,9 @@ The minimalist model makes two concrete predictions for state tracking. First, n
 
 This is the paper's main mechanism in picture form. The training distribution does not merely change which examples are sampled. It improves the pathological loss landscape near initialization.
 
-## Stage II: high-frequency skills help the tail
+## Then high-frequency skills help the tail
 
-**High-frequency skills first, scarce long-tail skills later.** Once the model has escaped the initial flat region, high-frequency skills play a second role. They are learned first. As they align with the ground truth, they increase $A(w)$. That larger weighted similarity strengthens the useful gradient for every skill, including scarce long-tail skills.
+**Stage II: high-frequency skills first, scarce long-tail skills later.** Once the model has escaped the initial flat region, high-frequency skills play a second role. They are learned first. As they align with the ground truth, they increase $A(w)$. That larger weighted similarity strengthens the useful gradient for every skill, including scarce long-tail skills.
 
 To check this stage-wise learning mechanism in the transformer, we group the hidden permutations by rank and track loss, accuracy, and gradient norm. The high-frequency group learns first. As it aligns, the gradient norm for later groups grows, and learning moves from high-frequency skills to scarce long-tail skills.
 
@@ -273,7 +273,7 @@ This is why the result is not "asymmetry is always good." It is a tradeoff. Too 
 
 ## Back to reasoning tasks
 
-**Why these two tasks?** State tracking is useful because it isolates the mechanism, but it is still an algorithmic task. We also want to know whether the same advantage of power-law distribution appears in more natural-language reasoning tasks. That is why the paper uses two additional settings.
+**Why these two tasks?** State tracking isolates the mechanism, but it is still an algorithmic task. We also want to know whether the same advantage of power-law distribution appears in more natural-language reasoning tasks. That is why the paper uses two additional settings.
 
 Multi-hop QA tests relation composition in natural-language form. We generate a synthetic knowledge graph with facts of the form
 
