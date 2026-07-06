@@ -118,27 +118,21 @@ This raises the main question: **what changes when a model has to compose skills
 
 ## A minimalist model of skill composition
 
-To understand why only a switch of training distribution helps in implicit compositional reasoning tasks, we look for a controlled setting of skill composition. Transformer experiments mix many effects: representation learning, attention, finite samples, and hidden multi-step operations. To isolate the effect of the data distribution, we use a minimalist abstraction of multi-hop skill composition.
+To understand why only a switch of training distribution helps in implicit compositional reasoning tasks, we look for a controlled setting of skill composition. Transformer experiments mix many effects: representation learning, attention, finite samples, and hidden multi-step operations. To isolate the role of the data distribution, consider a toy task called **$k$-multiplicative composition**.
 
-Inspired and simplified from the multi-hop QA tasks, we use a toy task called **$k$-multiplicative composition**. It keeps three ingredients: there are $d$ fixed skills, each example asks for a composition of $k$ sampled skills, and the sampling distribution over skills can be either uniform or power-law. The task is not meant to be realistic; it is meant to preserve the core difficulty that a skill is useful only through composition with other skills.
-
-Concretely, assume there are $d$ fixed skills $s_1,\ldots,s_d$. A skill here should be read as an atomic operation or knowledge piece. In multi-hop QA, it could be a relation; in arithmetic, it could be an operation such as $+3$ or $\times 2$. In the toy task, each skill is compressed into the simplest possible object: a hidden scalar sign $w_i^\star\in\{-1,+1\}$. The whole ground-truth knowledge is the hidden vector $w^\star=(w_1^\star,\ldots,w_d^\star)$.
-
-An input sequence is $X=(x_1,\ldots,x_k)$. Each position first samples a skill index $I_t\in[d]$ from the training distribution $p$, then represents that skill by the one-hot vector $x_t=e_{I_t}$. The training distribution $p$ is exactly the object we want to study: it can be uniform over the $d$ skills, or Zipf / power law with $p_j\propto j^{-\alpha}$.
-
-The label is the composition of the hidden scalars behind the sampled skills:
+There are $d$ atomic skills. A skill can be read as a relation in multi-hop QA or a basic operation in arithmetic. In the toy task, skill $i$ has a hidden sign $w_i^\star\in\{-1,+1\}$. A training example samples $k$ skill indices $I_1,\ldots,I_k$ from a distribution $p$ and asks the model to predict the product of their hidden signs:
 
 $$
-y=f_{w^\star}(X)=\prod_{t=1}^k (x_t^\top w^\star)=\prod_{t=1}^k w^\star_{I_t}.
+y=f_{w^\star}(X)=\prod_{t=1}^k w^\star_{I_t}.
 $$
 
-The model is deliberately matched to the task. It stores one learnable parameter $w_i$ per skill, collects the parameter corresponding to each input skill through $x_t^\top w$, and predicts the same kind of multiplicative composition:
+The model has one learnable parameter $w_i$ for each skill and predicts the same kind of product:
 
 $$
-f_w(X)=\prod_{t=1}^k (x_t^\top w)=\prod_{t=1}^k w_{I_t}.
+f_w(X)=\prod_{t=1}^k w_{I_t}.
 $$
 
-So the simplified learning problem is to recover the hidden skill vector $w^\star$ from examples $(X,y)$, with the student model identical to the teacher. This is close to a parity task, but with one extra layer of hidden knowledge: instead of directly receiving signs to multiply, the model receives only skill names. It must first learn what hidden scalar each skill name calls, and then compose those hidden scalars correctly across $k$ hops.
+So the task is simple but still compositional: the model must learn the hidden value of each skill and use several learned skills together. The only thing we change is the sampling distribution $p$: uniform over skills, or Zipf / power law with $p_j\propto j^{-\alpha}$.
 
 To analyze gradient descent, we consider the matched learner $f_w(X)=\prod_{t=1}^k w_{I_t}$ and optimize the population square loss $\mathcal L(w)=\frac12\mathbb E_X[(f_w(X)-f_{w^\star}(X))^2]$.
 
@@ -194,9 +188,20 @@ This is the vector form of the coordinate update in the main text.
 
 ## Uniform distribution induces hardness
 
-The first theoretical result says that uniform data can make this composition task hard for gradient-based learning. The formal tool is a correlational statistical query (CSQ) lower bound, and online SGD on the square loss belongs to this learner class. The high-level message is simple: under a uniform input distribution, learning the compositional task requires either very accurate gradient queries or a large amount of data/compute. (We will skip the formal argument, and directly jump to the insights behind the theorem below.)
+The intuition behind the failure of uniform distribution is, surprisingly, **symmetry**. Under uniform inputs, the possible hidden targets are too balanced, and correlation-based gradient queries reveal very little about which hidden vector is correct. The specific issue can be seen in the gradient dynamics. If $w_i(0)\sim\mathcal N(0,r^2)$, then
 
-<details class="powerlaw-details" markdown="1">
+$$
+\mathrm{Var}(A(w_0))=r^2\sum_{i=1}^d p_i^2.
+$$
+
+Under uniform distribution, every skill has probability $1/d$, so $\sum_i p_i^2=1/d$. The initial similarity is an average over all $d$ random coordinates, and its typical size is about $\lvert A(w_0)\rvert\approx r/\sqrt d$. Composition raises this small quantity to the power $k-1$. The useful initial signal therefore behaves like $(r/\sqrt d)^{k-1}$, **exponentially** slowing down the training.
+
+The results thus indicate that the more complex the task is (with an increasing number $k$), the slower the training is. A larger number of skills (a larger $d$) will make the issue even worse.
+
+<p class="powerlaw-punchline"><strong>Punchline.</strong> Uniform distribution fixes long-tail exposure, but for composition it can also create a symmetric hard instance: the initial alignment is tiny, the useful gradient is tiny, and gradient descent sees an almost flat landscape.</p>
+
+<p class="powerlaw-remark"><strong>Remark.</strong>
+The rigorous theoretical result uses another tool called correlational statistical query (CSQ) lower bound Under a uniform input distribution, learning the compositional task requires either very accurate gradient queries or a large amount of data/compute. <details class="powerlaw-details" markdown="1">
 <summary>CSQ lower bound and proof sketch</summary>
 
 **Theorem.** Let the input distribution be uniform, $p_j=1/d$, and let $k\ge 2$. There exists a function class $\mathcal F_k$ and a constant $\epsilon=\Omega(1)$ such that any correlational statistical query learner using $q$ queries requires tolerance
@@ -216,26 +221,11 @@ $$
 $$
 
 Next, choose a large subset of hypercube vectors whose pairwise normalized inner products are small. A standard Hoeffding plus union-bound argument gives a subset of size about $\exp(\Omega(\varepsilon^2d))$ with $\left|w_1^\top w_2/d\right|\le \varepsilon$ for every distinct pair. Therefore the corresponding functions are nearly uncorrelated, and a correlational query reveals very little about which target in the class is the true one. Plugging this packing into the standard CSQ lower-bound argument yields the tolerance bound above.
-</details>
-
-The intuition behind the failure is, surprisingly, **symmetry**. Under uniform inputs, the possible hidden targets are too balanced, and correlation-based gradient queries reveal very little about which hidden vector is correct. The specific issue can be seen in the gradient dynamics. If $w_i(0)\sim\mathcal N(0,r^2)$, then
-
-$$
-\mathrm{Var}(A(w_0))=r^2\sum_{i=1}^d p_i^2.
-$$
-
-Under uniform distribution, every skill has probability $1/d$, so $\sum_i p_i^2=1/d$. The initial similarity is an average over all $d$ random coordinates, and its typical size is about $\lvert A(w_0)\rvert\approx r/\sqrt d$. Composition raises this small quantity to the power $k-1$. The useful initial signal therefore behaves like $(r/\sqrt d)^{k-1}$, **exponentially** slowing down the training.
-
-Intuitively speaking, the results indicate that: the more complex the task is (with an increasing number $k$), the slower the training is. A larger number of skills (a larger $d$) will make the issue even worse. In summary, we have the following takeaway:
-
-
-<p class="powerlaw-punchline"><strong>Punchline.</strong> Uniform distribution fixes long-tail exposure, but for composition it can also create a symmetric hard instance: the initial alignment is tiny, the useful gradient is tiny, and gradient descent sees an almost flat landscape.</p>
+</details></p>
 
 ## Power-law distribution re-enables efficient training
 
 What about the more natural power-law distribution? Can it enable the learning of the simple model? The positive theorem says yes: online minibatch gradient descent can learn the same $k$-multiplicative composition task efficiently under a Zipf distribution.
-
-The exact assumptions and complexity bounds are included below; the main intuition is easier to see from the first gradient step.
 
 <details class="powerlaw-details" markdown="1">
 <summary>Power-law theorem and proof sketch</summary>
@@ -270,7 +260,7 @@ $$
 \approx -k\,\mathrm{diag}(p)\,A(0)^{k-1}w^\star.
 $$
 
-This is the beneficial asymmetry. For high-frequency skills, $p_j$ is large enough that the initial gradient is no longer tiny. The loss landscape near initialization now has a clearer descent direction toward the lower-loss region. This is **Stage I** of training: power law helps the model escape the flat initial region, which is the most important separation comparing to uniform distribution. After this, the optimization becomes much easier and goes through two further stages.
+This is the beneficial asymmetry. For high-frequency skills, $p_j$ is large enough that the initial gradient is no longer tiny. The loss landscape near initialization now has a clearer descent direction toward the lower-loss region. This is **Stage I** of training: power law helps the model escape the flatness. After this, the optimization becomes much easier and goes through two more stages.
 
 **Stage II: high-frequency skills help the tail.** Though the initial gradient signal is large enough to escape the flat region, the hidden scalars behind the skills are not learned simultaneously. Recall the coordinate update:
 
