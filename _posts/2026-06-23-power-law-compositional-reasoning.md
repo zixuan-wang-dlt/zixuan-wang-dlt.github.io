@@ -88,11 +88,11 @@ Overall, if the task were only to store isolated facts, "use a power-law distrib
 
 ## What if the task is multi-hop?
 
-However, natural language tasks are rarely just one-hop memorization. <strong>Reasoning</strong> tasks often require combining several pieces of atomic knowledge: apply one relation, keep the intermediate result, then apply another. So the natural next question is: what happens when the task becomes multi-hop?
+However, natural language tasks are not just about single-hop memorization. <strong>Reasoning</strong> tasks, for example, often require combining multiple thinking steps or pieces of atomic knowledge to solve a problem. What happens when the task becomes more reasoning-heavy?
 
-<p class="powerlaw-remark"><strong>Remark.</strong> For context, related work studies <a href="https://arxiv.org/abs/2309.14402">knowledge manipulation</a>, <a href="https://arxiv.org/abs/2505.17923">implicit multi-hop reasoning</a>, state tracking, and transformer limits on composition (<a href="https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log">parallelism</a>, <a href="https://arxiv.org/abs/2310.07923">chain of thought</a>).</p>
+<p class="powerlaw-remark"><strong>Remark.</strong> This framing is close to work on <a href="https://arxiv.org/abs/2309.14402">knowledge manipulation</a>, <a href="https://arxiv.org/abs/2505.17923">implicit multi-hop reasoning</a>, state tracking, <a href="https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log">parallelism</a>, and <a href="https://arxiv.org/abs/2310.07923">chain of thought</a>.</p>
 
-Now we keep the setup almost the same, but make the question <strong>multi-hop</strong>. Instead of asking for one relation, the question asks for a chain of relations. The model must apply the relations in order and compose the intermediate results. For example:
+Now we change only the task to a more reasoning-like, <strong>multi-hop QA</strong> task. Instead of asking for one relation, the questions ask for a chain of relations. The model must apply the relations one by one and compose all of them. For example:
 
 <div class="powerlaw-example">
   <div class="powerlaw-example__title">Two-hop example</div>
@@ -104,18 +104,18 @@ Now we keep the setup almost the same, but make the question <strong>multi-hop</
   </div>
 </div>
 
-For one-hop memorization, each relation can be learned almost <strong>independently</strong>: see enough examples, store the mapping, retrieve it later. In a two-hop QA problem, this is no longer enough. The model first has to retrieve the answer to the first relation, then use that intermediate entity as the input to the second relation.
+When memorizing atomic facts, each relation can be learned almost <strong>independently</strong>. In contrast, in a two-hop QA problem, the model has to retrieve the first fact, use its answer as the input to the second fact, and only then produce the final answer.
 
-From a coverage-only view, this should make uniform distribution even more attractive. If a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k$, then the full combination is much rarer than any one skill alone. A power-law distribution undersamples scarce long-tail skills, and rare chains involve rare pieces. So the naive prediction is: uniform distribution should help even more for multi-hop reasoning than for one-hop memorization.
+Intuitively, if a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k$, the full combination is much rarer than any one skill alone. From a pure coverage view, power-law distribution should look especially bad here: it undersamples scarce long-tail skills, and rare chains involve rare pieces. So the naive prediction is: uniform distribution should help more for multi-hop reasoning than for memorization. This makes the uniform intuition even more tempting.
 
-But the experiment goes the other way. On multi-hop QA, models trained with a power-law distribution learn faster.
+But the experiment goes the other way. For multi-hop QA, power-law distribution exhibits a clear gain in training speed.
 
 <figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/multi-hop-qa-accuracy.png" alt="Power-law distribution learns the multi-hop QA task earlier than uniform distribution">
   <figcaption>Figure 4: The one-hop result says uniform distribution helps coverage. The multi-hop result says coverage is not enough for compositional reasoning tasks.</figcaption>
 </figure>
 
-This is the central question of our paper: **what changes when a model has to compose skills rather than recall them one at a time? Why can a power-law distribution help models learn compositional reasoning after it hurts one-hop memorization?**
+This raises our research question: **what changes when a model has to compose skills rather than recall them one at a time? Why does a power-law distribution help language models learn reasoning?**
 
 ## A minimalist model of skill composition
 
