@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "Why Asymmetric Power Laws Help Reasoning?"
+title: "Why Do Asymmetric Power Laws Help Reasoning?"
 description: "Uniform distribution improves long-tail coverage, but power-law distribution can improve the loss landscape for compositional reasoning by breaking symmetry."
 date: 2026-06-23
 permalink: /posts/2026/06/power-law-reasoning/
@@ -62,9 +62,9 @@ That is the intuition we start from. If a power-law distribution creates a long-
   <figcaption>Figure 2: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills. The puzzle is why this asymmetry improves the loss landscape for compositional reasoning tasks.</figcaption>
 </figure>
 
-## Sanity check: memorization on one-hops
+## Sanity check: one-hop memorization
 
-We start with a task where memorizing atomic knowledge is required, one-hop Question Answering (QA). Each example contains a single fact of the form "entity -- relation --> answer." The question asks for that answer directly. There is no intermediate entity to carry, no second relation to apply, and no hidden chain to execute. This is memorization in the cleanest sense.
+We start with a task that mainly requires memorizing atomic knowledge: one-hop question answering (QA). Each example contains a single fact of the form "entity -- relation --> answer." The question asks for that answer directly. There is no intermediate entity to carry, no second relation to apply, and no hidden chain to execute. This is memorization in the cleanest sense.
 
 In this setting, if a relation is rare under a power-law distribution, the model simply sees fewer direct examples of that relation. Since the test set asks one-hop questions across all relations, the bottleneck is coverage of long-tail relation skills. Therefore, uniform distribution should help on this task.
 
@@ -84,17 +84,15 @@ The experiment behaves exactly this way. We randomly rank relations, train one m
   <figcaption>Figure 3: For one-hop memorization, the usual long-tail intuition is correct. Uniform distribution gives rare relations more exposure and reaches high exact match faster.</figcaption>
 </figure>
 
-In all, if the task were only to store isolated facts, "use a power-law distribution" would be a strange recommendation. High-frequency skills are already frequent; scarce long-tail skills need data. Shifting towards a uniform distribution gives every skill a fairer chance.
+Overall, if the task were only to store isolated facts, "use a power-law distribution" would be a strange recommendation. High-frequency skills are already frequent; scarce long-tail skills need data. Shifting towards a uniform distribution gives every skill a fairer chance.
 
 ## What if the task is multi-hop?
 
-Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), asks what happens when the goal is not to recall one atomic fact, but to compose several skills to solve a problem.
+However, natural language tasks are rarely just one-hop memorization. <strong>Reasoning</strong> tasks often require combining several pieces of atomic knowledge: apply one relation, keep the intermediate result, then apply another. So the natural next question is: what happens when the task becomes multi-hop?
 
-Here, "reasoning" means multi-step knowledge manipulation or multi-step function composition: apply one relation, carry the intermediate result, then apply another relation; update an internal state through several steps; or compose arithmetic operations without an explicit chain-of-thought trace.
+<p class="powerlaw-remark"><strong>Remark.</strong> For context, related work studies <a href="https://arxiv.org/abs/2309.14402">knowledge manipulation</a>, <a href="https://arxiv.org/abs/2505.17923">implicit multi-hop reasoning</a>, state tracking, and transformer limits on composition (<a href="https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log">parallelism</a>, <a href="https://arxiv.org/abs/2310.07923">chain of thought</a>).</p>
 
-<p class="powerlaw-remark"><strong>Remark.</strong> This framing is close to work on <a href="https://arxiv.org/abs/2309.14402">knowledge manipulation</a>, <a href="https://arxiv.org/abs/2505.17923">implicit multi-hop reasoning</a>, state tracking, and transformer limits on composition (<a href="https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log">parallelism</a>, <a href="https://arxiv.org/abs/2310.07923">chain of thought</a>).</p>
-
-Now change only the task. Instead of asking for one relation, ask for a chain. The model must apply one relation, keep the intermediate entity around, and then apply another relation.
+Now we keep the setup almost the same, but make the question <strong>multi-hop</strong>. Instead of asking for one relation, the question asks for a chain of relations. The model must apply the relations in order and compose the intermediate results. For example:
 
 <div class="powerlaw-example">
   <div class="powerlaw-example__title">Two-hop example</div>
@@ -106,24 +104,18 @@ Now change only the task. Instead of asking for one relation, ask for a chain. T
   </div>
 </div>
 
-This is a small change in surface form, but a large change in the learning problem. In one-hop QA, each relation can be learned almost independently: see enough examples of the relation, store the mapping, retrieve it later. In two-hop QA, the model has to retrieve the first fact, use its answer as the input to the second fact, and only then produce the final answer.
+For one-hop memorization, each relation can be learned almost <strong>independently</strong>: see enough examples, store the mapping, retrieve it later. In a two-hop QA problem, this is no longer enough. The model first has to retrieve the answer to the first relation, then use that intermediate entity as the input to the second relation.
 
-This makes the uniform intuition even more tempting. If a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k$, the full combination is much rarer than any one skill alone. From a pure coverage view, power-law distribution should look especially bad here: it undersamples scarce long-tail skills, and rare chains involve rare pieces.
+From a coverage-only view, this should make uniform distribution even more attractive. If a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k$, then the full combination is much rarer than any one skill alone. A power-law distribution undersamples scarce long-tail skills, and rare chains involve rare pieces. So the naive prediction is: uniform distribution should help even more for multi-hop reasoning than for one-hop memorization.
 
-So the naive prediction is: uniform distribution should help more for multi-hop reasoning than for memorization.
-
-But the experiment goes the other way.
+But the experiment goes the other way. On multi-hop QA, models trained with a power-law distribution learn faster.
 
 <figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/multi-hop-qa-accuracy.png" alt="Power-law distribution learns the multi-hop QA task earlier than uniform distribution">
   <figcaption>Figure 4: The one-hop result says uniform distribution helps coverage. The multi-hop result says coverage is not enough for compositional reasoning tasks.</figcaption>
 </figure>
 
-So the puzzle is not "is uniform distribution good or bad?" For isolated facts, uniform distribution is good for the expected reason: it improves exposure. The real question is: **what changes when a model has to compose skills rather than recall them one at a time?**
-
-Our answer is that composition changes the optimization geometry. Uniform distribution removes imbalance, but it can also make the loss landscape too symmetric near initialization. Power-law distribution breaks this symmetry and creates the first useful descent signal.
-
-To see this without all the moving parts of a transformer, we need a toy task where the only thing left is skill composition under a training distribution.
+This is the central question of our paper: **what changes when a model has to compose skills rather than recall them one at a time? Why can a power-law distribution help models learn compositional reasoning after it hurts one-hop memorization?**
 
 ## A minimalist model of skill composition
 
