@@ -118,70 +118,41 @@ This raises our research question: **what changes when a model has to compose sk
 
 ## A minimalist model of skill composition
 
-To understand why only a switch of training distribution helps in implicit compositional reasoning tasks, the paper looks for the simplest model of skill composition.
+To understand why only a switch of training distribution helps in implicit compositional reasoning tasks, we look for a controlled setting of skill composition. However, transformers settings potentially have many entangled effects and can be very challenging to analyze. To isolate the effect of the data distribution, we want a minimalist task as the abstraction of multi-hop skill composition where theoretical insights can be found.
 
-Transformer experiments mix many effects: representation learning, attention, finite samples, and hidden multi-step operations. To isolate the effect of the data distribution, the paper strips away everything except skill composition.
+Inspired and simplified from the multi-hop QA tasks, we propose the resulting task called **$k$-multiplicative composition**. It keeps three ingredients: there are $d$ fixed skills, each example asks for a composition of $k$ sampled skills, and the sampling distribution over skills can be either uniform or power-law. The task is not meant to be realistic; it is meant to preserve the core difficulty that a skill is useful only through composition with other skills.
 
-The resulting task is called **$k$-multiplicative composition**. It keeps three ingredients: there are $d$ fixed skills, each example asks for a composition of $k$ sampled skills, and the sampling distribution over skills can be either uniform or power-law.
+Concretely, assume there are $d$ fixed skills $s_1,\ldots,s_d$. A skill here should be read as an atomic operation or knowledge piece. In multi-hop QA, it could be a relation; in arithmetic, it could be an operation such as $+3$ or $\times 2$. In the toy task, each skill is compressed into the simplest possible object: a hidden scalar sign $w_i^\star\in\{-1,+1\}$. The whole ground-truth knowledge is the hidden vector $w^\star=(w_1^\star,\ldots,w_d^\star)$.
 
-Each skill is represented by a hidden scalar sign, and composition is represented by multiplication. The task is not meant to be realistic; it is meant to preserve the core difficulty that a skill is useful only through composition with other skills.
+An input sequence is $X=(x_1,\ldots,x_k)$. Each position first samples a skill index $I_t\in[d]$ from the training distribution $p$, then represents that skill by the one-hot vector $x_t=e_{I_t}$. The training distribution $p$ is exactly the object we want to study: it can be uniform over the $d$ skills, or Zipf / power law with $p_j\propto j^{-\alpha}$.
 
-There are $d$ skills. Skill $i$ has a hidden sign $w_i^\star$, equal to either $-1$ or $+1$. A training example samples $k$ skills from a distribution $p$, and the label is the product of their hidden signs:
-
-$$
-y=\prod_{t=1}^k w^\star_{I_t}.
-$$
-
-The model stores one parameter $w_i$ per skill and predicts the same kind of product:
+The label is the composition of the hidden scalars behind the sampled skills:
 
 $$
-f_w(X)=\prod_{t=1}^k w_{I_t}.
+y=f_{w^\star}(X)=\prod_{t=1}^k (x_t^\top w^\star)=\prod_{t=1}^k w^\star_{I_t}.
 $$
 
-You can think of this as a parity-like task with hidden knowledge behind each input skill. The input gives the skill names; the model has to uncover the hidden scalar behind each skill and compose those hidden scalars correctly.
-
-For $k=1$, this is just one-hop learning: each example updates one skill. For $k>1$, the signal for one skill depends on whether the model is already aligned with the other skills in the product.
-
-To analyze gradient descent, the paper considers the matched learner
+The model is deliberately matched to the task. It stores one learnable parameter $w_i$ per skill, collects the parameter corresponding to each input skill through $x_t^\top w$, and predicts the same kind of multiplicative composition:
 
 $$
-f_w(X)=\prod_{t=1}^k w_{I_t},\qquad w\in\mathbb R^d,
+f_w(X)=\prod_{t=1}^k (x_t^\top w)=\prod_{t=1}^k w_{I_t}.
 $$
 
-and optimizes the population square loss
+So the learning problem is to recover the hidden skill vector $w^\star$ from examples $(X,y)$. This is close to a parity task, but with one extra layer of hidden knowledge: instead of directly receiving signs to multiply, the model receives only skill names. It must first learn what hidden scalar each skill name calls, and then compose those hidden scalars correctly across $k$ hops.
 
-$$
-\mathcal L(w)=\frac12\mathbb E_X\left[\left(f_w(X)-f_{w^\star}(X)\right)^2\right].
-$$
+To analyze gradient descent, the paper considers the matched learner $f_w(X)=\prod_{t=1}^k w_{I_t}$ and optimizes the population square loss $\mathcal L(w)=\frac12\mathbb E_X[(f_w(X)-f_{w^\star}(X))^2]$.
 
 The two quantities that control the dynamics are the weighted inner product and weighted norm
-
 $$
 A(t)=\sum_{i=1}^d p_iw_i(t)w_i^\star,\qquad
 B(t)=\sum_{i=1}^d p_iw_i(t)^2.
 $$
-
-Here $A(t)$ is the similarity between the current model and the ground truth under the training distribution, while $B(t)$ is the corresponding weighted norm. Because the $k$ input skills are sampled independently,
-
-$$
-\mathbb E[f_w(X)^2]=B(t)^k,\qquad
-\mathbb E[f_w(X)f_{w^\star}(X)]=A(t)^k.
-$$
-
-So the population loss simplifies to
-
-$$
-\mathcal L(w)=\frac12\left(B(t)^k-2A(t)^k+1\right).
-$$
-
-Differentiating gives the population gradient
-
+where $A(t)$ is the similarity between the current model and the ground truth under the training distribution, while $B(t)$ is the corresponding weighted norm. The key object is the population gradient. A short calculation gives
 $$
 \nabla \mathcal L(w(t))
 =kD\left(B(t)^{k-1}w(t)-A(t)^{k-1}w^\star\right),
 \qquad D=\mathrm{diag}(p_1,\ldots,p_d).
 $$
-
 Equivalently, the expected gradient descent update for coordinate $j$ is
 
 $$
@@ -189,13 +160,7 @@ w_j(t+1)-w_j(t)
 =\eta kp_j\left(A(t)^{k-1}w_j^\star-B(t)^{k-1}w_j(t)\right).
 $$
 
-This equation is the mechanism in miniature. The factor $p_j$ is the local sampling frequency of skill $j$. The factor $A(t)^{k-1}$ is the global composition signal: it is large only when the current model already has some weighted similarity with the hidden target. Near initialization, the key question is whether the signal term
-
-$$
-kp_jA(t)^{k-1}w_j^\star
-$$
-
-is large enough for gradient descent to escape the flat initial region.
+This equation is the mechanism in miniature. The factor $p_j$ is the local sampling frequency of skill $j$. The factor $A(t)^{k-1}$ is the global composition signal: it is large only when the current model already has some weighted similarity with the hidden target. Near initialization, the key question is whether the signal term $kp_jA(t)^{k-1}w_j^\star$ is large enough for gradient descent to escape the flat initial region.
 
 <details class="powerlaw-details" markdown="1">
 <summary>Where the gradient formula comes from</summary>
@@ -213,24 +178,19 @@ $$
 \mathcal L(w)=\frac12\left(B(t)^k-2A(t)^k+1\right).
 $$
 
-Differentiating $B(t)$ and $A(t)$ with respect to $w_j$ gives the coordinate update above.
+Differentiating gives
+
+$$
+\nabla \mathcal L(w(t))
+=kD\left(B(t)^{k-1}w(t)-A(t)^{k-1}w^\star\right).
+$$
+
+This is the vector form of the coordinate update in the main text.
 </details>
 
 ## Uniform distribution induces hardness
 
-The first theoretical result says that uniform data can make this composition task hard for gradient-based learning. Formally, it proves a correlational statistical query lower bound. Informally, if the input distribution is uniform, then a broad class of gradient-style learners needs either very accurate queries or many samples. With $q$ queries, the required tolerance satisfies
-
-$$
-\tau^2\le \left(\frac{\log(dq)}{d}\right)^{k/2}
-$$
-
-to reach constant loss. Using the heuristic $\tau\approx 1/\sqrt n$, this corresponds to about
-
-$$
-n\gtrsim d^{k/2}
-$$
-
-samples in the relevant regime. Under uniform distribution, learning the task requires $d^{\Omega(k)}$ samples or runtime.
+The first theoretical result says that uniform data can make this composition task hard for gradient-based learning. Formally, it proves a correlational statistical query lower bound. Informally, if the input distribution is uniform, then a broad class of gradient-style learners needs either very accurate queries or many samples. With $q$ queries, the required tolerance satisfies $\tau^2\le (\log(dq)/d)^{k/2}$ to reach constant loss. Using the heuristic $\tau\approx 1/\sqrt n$, this corresponds to about $n\gtrsim d^{k/2}$ samples in the relevant regime. Under uniform distribution, learning the task requires $d^{\Omega(k)}$ samples or runtime.
 
 The intuition is symmetry. Under uniform inputs, the possible hidden targets are too balanced, and correlation-based queries reveal very little about which hidden vector is correct. The same issue appears in the gradient dynamics. If $w_i(0)\sim\mathcal N(0,r^2)$, then
 
@@ -238,17 +198,7 @@ $$
 \mathrm{Var}(A(w_0))=r^2\sum_{i=1}^d p_i^2.
 $$
 
-Under uniform distribution, every skill has probability $1/d$, so $\sum_i p_i^2=1/d$. The initial similarity is an average over all $d$ random coordinates, and its typical size is about
-
-$$
-\lvert A(w_0)\rvert\approx \frac{r}{\sqrt d}.
-$$
-
-Composition raises this small quantity to the power $k-1$. The useful initial signal therefore behaves like
-
-$$
-\left(\frac{r}{\sqrt d}\right)^{k-1}.
-$$
+Under uniform distribution, every skill has probability $1/d$, so $\sum_i p_i^2=1/d$. The initial similarity is an average over all $d$ random coordinates, and its typical size is about $\lvert A(w_0)\rvert\approx r/\sqrt d$. Composition raises this small quantity to the power $k-1$. The useful initial signal therefore behaves like $(r/\sqrt d)^{k-1}$.
 
 This is the hidden cost of uniform distribution. It removes imbalance, but it also makes the initial learning signal vanish with dimension and composition length. The lower bound is distributional: it relies on a uniform or symmetric training distribution. This is why the next question is natural: can the asymmetry in a power-law distribution re-enable efficient training?
 
@@ -256,27 +206,9 @@ This is the hidden cost of uniform distribution. It removes imbalance, but it al
 
 The positive theorem says yes: online minibatch gradient descent can learn the same $k$-multiplicative composition task efficiently under a Zipf distribution.
 
-Informally, let $p_j\propto j^{-\alpha}$ with $\alpha>1$. Suppose $k=\Theta(1)$ is even, $w(0)\sim\mathcal N(0,r^2I_d)$ with $r=\Theta(1)$, and the learning rate and batch size are in the stable regime. Then with high probability, minibatch gradient descent recovers the hidden skill vector up to error $\varepsilon$ with about
+Informally, let $p_j\propto j^{-\alpha}$ with $\alpha>1$. Suppose $k=\Theta(1)$ is even, $w(0)\sim\mathcal N(0,r^2I_d)$ with $r=\Theta(1)$, and the learning rate and batch size are in the stable regime. Then with high probability, minibatch gradient descent recovers the hidden skill vector up to error $\varepsilon$ with about $\widetilde O(d^{2\alpha}/(\eta\varepsilon))$ samples and roughly $\widetilde O((d^\alpha/\eta)\log(1/\varepsilon))$ iterations. When the composition number is large enough compared with the exponent, this beats the uniform lower-bound scaling.
 
-$$
-\widetilde O\left(\frac{d^{2\alpha}}{\eta\varepsilon}\right)
-$$
-
-samples, and within roughly
-
-$$
-\widetilde O\left(\frac{d^\alpha}{\eta}\log\frac1\varepsilon\right)
-$$
-
-iterations. When the composition number is large enough compared with the exponent, this beats the uniform lower-bound scaling.
-
-The proof follows the population gradient above. Under a power-law distribution, the frequent skills occur with constant probability. Equivalently, $\sum_i p_i^2$ does not shrink like $1/d$. Therefore the initial weighted similarity is not washed out by averaging over all $d$ skills:
-
-$$
-|A(0)|\approx \Theta(r).
-$$
-
-At the same time, for small constant initialization scale, $B(0)\approx \Theta(r^2)$. Thus the signal term dominates the first update:
+The proof follows the population gradient above. Under a power-law distribution, the frequent skills occur with constant probability. Equivalently, $\sum_i p_i^2$ does not shrink like $1/d$. Therefore the initial weighted similarity is not washed out by averaging over all $d$ skills: $|A(0)|\approx \Theta(r)$. At the same time, for small constant initialization scale, $B(0)\approx \Theta(r^2)$. Thus the signal term dominates the first update:
 
 $$
 w_j(1)-w_j(0)
