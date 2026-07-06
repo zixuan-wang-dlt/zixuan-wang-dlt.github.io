@@ -233,9 +233,9 @@ Intuitively speaking, the results indicate that: the more complex the task is (w
 
 ## Power-law distribution re-enables efficient training
 
-What changes under a power-law distribution? The short answer is that the head skills are sampled often enough to create a non-negligible initial alignment. This breaks the symmetry that made uniform training hard.
+What about the more natural power-law distribution? Can it enable the learning of the simple model? The positive theorem says yes: online minibatch gradient descent can learn the same $k$-multiplicative composition task efficiently under a Zipf distribution.
 
-At a high level, the positive result says that online minibatch gradient descent can learn the same $k$-multiplicative composition task efficiently under a Zipf distribution. The exact assumptions and complexity bounds are useful, but the main intuition is easier to see from the first gradient step.
+The exact assumptions and complexity bounds are included below; the main intuition is easier to see from the first gradient step.
 
 <details class="powerlaw-details" markdown="1">
 <summary>Power-law theorem and proof sketch</summary>
@@ -244,7 +244,7 @@ At a high level, the positive result says that online minibatch gradient descent
 
 When the composition number is large compared with the power-law exponent, this improves over the uniform lower-bound scaling.
 
-**Proof sketch.** The proof first analyzes population gradient descent. Under a power-law distribution, head skills have constant probability, so the initial weighted alignment $|A(0)|$ is not averaged down by all $d$ skills. With small constant initialization scale, $|A(0)|\approx\Theta(r)$ while $B(0)\approx\Theta(r^2)$, so the signal term dominates the first update. This gives a large initial gradient for head skills and a clearer descent direction in the loss landscape.
+**Proof sketch.** The proof first analyzes population gradient descent. Under a power-law distribution, head skills have constant probability, so the initial weighted alignment $\lvert A(0)\rvert$ is not averaged down by all $d$ skills. With small constant initialization scale, $\lvert A(0)\rvert\approx\Theta(r)$ while $B(0)\approx\Theta(r^2)$, so the signal term dominates the first update. This gives a large initial gradient for head skills and a clearer descent direction in the loss landscape.
 
 With this initialization behavior, one can prove a Polyak-Lojasiewicz-type condition along the stable trajectory,
 
@@ -256,7 +256,7 @@ $$
 This guarantees convergence of the population dynamics. A finite-sample concentration argument then shows that minibatch SGD tracks this population trajectory.
 </details>
 
-The proof intuition follows the population gradient above. Under a power-law distribution, the frequent skills occur with constant probability. Equivalently, $\sum_i p_i^2$ does not shrink like $1/d$. Therefore the initial weighted similarity is not washed out by averaging over all $d$ skills: $|A(0)|\approx \Theta(r)$. At the same time, for small constant initialization scale, $B(0)\approx \Theta(r^2)$. Thus the signal term dominates the first update:
+Recall the population gradient above. Under a power-law distribution, the frequent skills occur with constant probability. Equivalently, $\sum_i p_i^2$ does not shrink like $1/d$. Therefore the initial weighted similarity is not washed out by averaging over all $d$ skills: $\lvert A(0)\rvert\approx \Theta(r)$. At the same time, for small constant initialization scale, $B(0)\approx \Theta(r^2)$. Thus the signal term dominates the first update:
 
 $$
 w_j(1)-w_j(0)
@@ -270,21 +270,39 @@ $$
 \approx -k\,\mathrm{diag}(p)\,A(0)^{k-1}w^\star.
 $$
 
-This is the beneficial asymmetry. For high-frequency skills, $p_j$ is large enough that the initial gradient is no longer tiny. The loss landscape near initialization now has a clearer descent direction toward the lower-loss region.
+This is the beneficial asymmetry. For high-frequency skills, $p_j$ is large enough that the initial gradient is no longer tiny. The loss landscape near initialization now has a clearer descent direction toward the lower-loss region. This is **Stage I** of training: power law helps the model escape the flat initial region, which is the most important separation comparing to uniform distribution. After this, the optimization becomes much easier and goes through two further stages.
 
-The same calculation explains why uniform distribution is hard: under uniform sampling, $p_j=1/d$ and $A(0)\approx O(1/\sqrt d)$, so the initial gradient is much smaller. Power law does not make the tail frequent. It improves the pathological initial landscape by inducing an asymmetry.
+**Stage II: high-frequency skills help the tail.** Though the initial gradient signal is large enough to escape the flat region, the hidden scalars behind the skills are not learned simultaneously. Recall the coordinate update:
+
+$$
+w_j(t+1)-w_j(t)
+=\eta kp_j\left(A(t)^{k-1}w_j^\star-B(t)^{k-1}w_j(t)\right).
+$$
+
+The head skills have large sampling probabilities. For a constant-rank skill $i=O(1)$ under a Zipf law with $\alpha>1$, we have $p_i=\Theta(1)$. These skills therefore grow first from the initialization scale $r$ to a large constant. Once enough head skills are aligned, the weighted similarity
+
+$$
+A(t)=\sum_{i=1}^d p_iw_i(t)w_i^\star
+$$
+
+increases from the initialization scale $O(r)$ to $O(1)$. This matters because every coordinate update contains the same global factor $A(t)^{k-1}$. For a tail skill $j=\Omega(d)$, the local factor $p_j$ is still small, but the signal term
+
+$$
+kp_jA(t)^{k-1}w_j^\star
+$$
+
+is now much larger than it was near initialization. In this sense, the head skills act as a stepping stone: power law first learns high-frequency skills, and those learned skills increase the gradient signal for scarce long-tail skills.
+
+**Stage III: the long-tail drawback returns.** Once all hidden scalars have non-trivial accuracy, training enters the convergence phase. At this point, the original long-tail intuition finally comes back. Skills with large rank $j=\Omega(d)$ have small sampling probability, roughly $p_j=O(d^{-\alpha})$, so they are updated much less often. Even though the model has already found a useful compositional direction, final convergence on the tail is slowed by the low probability of sampling tail skills.
+
+This is why the result is not "power law makes the tail easy." The tail is still hard at the end. The advantage is that the first two stages let the model start composing before the usual long-tail bottleneck dominates.
 
 <p class="powerlaw-punchline"><strong>Punchline.</strong> Power law helps not by showing the tail more often, but by breaking the symmetry first. The head creates a visible descent direction; only after that can head skills become stepping stones for the tail.</p>
 
-The theory therefore predicts a stage-wise mechanism:
-
-1. **Stage I: escaping from the flat region.** Power-law distribution improves the pathological loss landscape near initialization and strengthens the initial learning signal of composition.
-2. **Stage II: high-frequency skills help the tail.** Head skills are learned first, which increases $A(t)$ and strengthens the useful gradient for scarce long-tail skills.
-3. **Stage III: the long-tail drawback returns.** Tail skills still appear rarely, so final convergence is slowed by the usual long-tail effect.
 
 ## The transformer check: state tracking
 
-The next check is whether the same mechanism appears in transformers. The cleanest testbed is the $S_5$ state tracking task, a synthetic composition task related to Allen-Zhu's [DePO/canon-layer setup](https://ssrn.com/abstract=5240330) and Merrill and Sabharwal's transformer limits work ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)).
+To test the generality of the theory prediction, the next step is to check whether the same mechanism appears in transformers. As a standard testbed, we consider the $S_5$ state tracking task, a synthetic composition task related to Allen-Zhu's [DePO/canon-layer setup](https://ssrn.com/abstract=5240330) and Merrill and Sabharwal's transformer limits work ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)).
 
 In this task, the input is a sequence of group elements $g_1,g_2,\ldots,g_k\in S_5$, and the target is their composition $g_1\circ g_2\circ\cdots\circ g_k$ without chain-of-thought. The skills are the permutations themselves. The model cannot solve the task by recognizing one update rule in isolation; it has to compose the sequence.
 
@@ -305,24 +323,20 @@ This task is known to be hard under uniform training distribution without interm
   <figcaption>Figure 6: Power-law distribution induces a much better initial loss landscape. Uniform training is flatter near initialization and harder to optimize by gradient methods.</figcaption>
 </figure>
 
-**Stage II: head skills help the tail.** After the initial escape, the hidden scalars behind the skills are not learned simultaneously. The head skills are learned first. In the toy model, this raises the weighted similarity $A(t)$ from initialization scale to a larger value, which significantly increases the signal term $kp_jA(t)^{k-1}w_j^\star$ in the gradient.
-
-The state tracking experiment checks this acceleration effect directly. The permutations are separated by rank into bins. Once the head bin starts to learn, the expected gradient norm on samples requiring a tail permutation becomes much larger when the other input permutations come from the learned head bin. This is the empirical counterpart of increasing $A(t)$ in the theory.
+**Stage II and III: head-to-tail learning, then long-tail convergence.** Figure 7 checks the remaining stages above. The permutations are separated by rank into bins. Once the head bin starts to learn, the expected gradient norm on samples requiring a tail permutation becomes much larger when the other input permutations come from the learned head bin. This is the empirical counterpart of increasing $A(t)$ in Stage II. Later, the tail bins still converge more slowly, matching the Stage III long-tail bottleneck.
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <img src="/images/blog/power-law/state-tracking-stages.png" alt="State tracking stage-wise learning mechanism under power-law distribution">
   <figcaption>Figure 7: The transformer dynamics show the same stage-wise mechanism as the minimalist model. Head skills are learned first, then increase the gradient signal for scarce long-tail skills.</figcaption>
 </figure>
 
-**Stage III: the long-tail drawback returns.** This does not mean that the tail becomes easy. In the final stage, the scarce long-tail skills still appear with small probability, so convergence on the tail is slower. This is the intuitive drawback of power-law distribution, but it appears after the model has already escaped the flat region and learned useful head compositions.
-
-So the story is not "asymmetry is always good." It is more specific: power-law distribution first improves the pathological landscape, then creates an implicit curriculum through high-frequency skills, and finally faces the ordinary long-tail drawback.
+So the state-tracking experiment mirrors the theory: power-law distribution first improves the pathological landscape, then creates an implicit curriculum through high-frequency skills, and finally faces the ordinary long-tail drawback.
 
 ## Back to reasoning tasks
 
 Finally, we can ask whether this understanding generalizes beyond the minimalist model and state tracking. Consider two synthetic natural-language reasoning tasks: multi-hop question answering and synthetic grade-school math. Only the training distribution is changed; the test sets are sampled uniformly over skills.
 
-The first setting is multi-hop QA. The data is based on synthetic facts over relations between individuals, which can be viewed as a dependency graph:
+The first setting is multi-hop QA we mentioned earlier. The data is based on synthetic facts over relations between individuals, which can be viewed as a dependency graph:
 
 $$
 e_i \xrightarrow{r} e_j,
@@ -337,9 +351,9 @@ e_0 \xrightarrow{r_1} e_1
 \xrightarrow{r_k} e_k.
 $$
 
-Each relation is treated as an atomic skill, and each hop in the question corresponds to one relation. The model has to answer the multi-hop query directly, without explicit chain-of-thought supervision.
+Each relation is treated as an atomic skill, and each hop in the question corresponds to one relation. The model has to answer the multi-hop query directly, without explicit chain-of-thought supervision. We vary the number of people (entity $\lvert E\rvert$) and the number of different kinds of relations ($\lvert R\rvert$) to control the hardness of the task.
 
-The second setting is synthetic GSM-style arithmetic. These problems are generated from layered dependency graphs and natural-language templates. The answer requires composing several arithmetic operations, so each problem can be seen as a composition of basic operations on the dependency graph.
+The second setting is synthetic GSM-style arithmetic, following the spirit of controlled math-reasoning generators in [Physics of Language Models: Part 2.1](https://arxiv.org/abs/2407.20311) and [GSM-Infinite](https://arxiv.org/abs/2502.05252). These problems are generated from layered dependency graphs and natural-language templates. The answer requires composing several arithmetic operations, so each problem can be seen as a composition of basic operations on the dependency graph.
 
 <div class="powerlaw-example powerlaw-example--grid">
   <div>
@@ -402,7 +416,9 @@ The thing to remember is simple: <strong>power-law distribution helps reasoning 
 - Eric J. Michaud. [On neural scaling and the quanta hypothesis](https://ericjmichaud.com/quanta/). 2026.
 - Eric J. Michaud, Ziming Liu, Uzay Girit, and Max Tegmark. [The Quantization Model of Neural Scaling](https://arxiv.org/abs/2303.13506). NeurIPS, 2023.
 - Zeyuan Allen-Zhu. [Physics of Language Models: Part 4.1, Architecture Design and the Magic of Canon Layers](https://ssrn.com/abstract=5240330). SSRN, 2025.
+- Tian Ye, Zicheng Xu, Yuanzhi Li, and Zeyuan Allen-Zhu. [Physics of Language Models: Part 2.1, Grade-School Math and the Hidden Reasoning Process](https://arxiv.org/abs/2407.20311). arXiv, 2024.
 - Zeyuan Allen-Zhu and Yuanzhi Li. [Physics of Language Models: Part 3.2, Knowledge Manipulation](https://arxiv.org/abs/2309.14402). arXiv, 2023.
+- Yang Zhou, Hongyi Liu, Zhuoming Chen, Yuandong Tian, and Beidi Chen. [GSM-Infinite: How Do Your LLMs Behave over Infinitely Increasing Context Length and Reasoning Complexity?](https://arxiv.org/abs/2502.05252). arXiv, 2025.
 - William Merrill and Ashish Sabharwal. [The Parallelism Tradeoff: Limitations of Log-Precision Transformers](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log). TACL, 2023.
 - William Merrill and Ashish Sabharwal. [The Expressive Power of Transformers with Chain of Thought](https://arxiv.org/abs/2310.07923). arXiv, 2023.
 - Nouha Dziri et al. [Faith and Fate: Limits of Transformers on Compositionality](https://arxiv.org/abs/2305.18654). arXiv, 2023.
