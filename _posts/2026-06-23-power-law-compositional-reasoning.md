@@ -364,9 +364,9 @@ The second setting is synthetic GSM-style arithmetic, following the spirit of co
   </div>
   <div>
     <div class="powerlaw-example__title">GSM-style arithmetic</div>
-    <p><strong>Facts:</strong> Start with 4. Add 3. Then double it.</p>
-    <p><strong>Question:</strong> What number do we get?</p>
-    <p><strong>Computation:</strong> 4 -> 7 -> 14</p>
+    <p><strong>Facts:</strong> A studio has 5 backpacks. A school has 3 more backpacks than twice the studio's backpacks.</p>
+    <p><strong>Question:</strong> How many backpacks does the school have?</p>
+    <p><strong>Computation:</strong> studio = 5; school = 2 * 5 + 3 = 13</p>
   </div>
 </div>
 
@@ -380,35 +380,11 @@ Across these tasks, the pattern is consistent with the theory. Power-law trainin
   <figcaption>Figure 8: The same mechanism appears beyond state tracking. Multi-hop QA shows stage-wise learning and a steeper power-law loss landscape; synthetic GSM-style arithmetic shows that the advantage is not limited to relation chaining.</figcaption>
 </figure>
 
-## The intuition to keep
-
-Uniform distribution is balanced for coverage, but in compositional tasks it can induce hardness by making the initial learning signal too small. In the minimalist model, this appears through $A(0)$: under uniform distribution, $A(0)$ is washed out by averaging over many skills, and the useful gradient scales like $A(0)^{k-1}$. In the transformer experiments, the same idea appears as a flatter loss landscape near initialization.
-
-Power-law distribution is imbalanced, but this imbalance is useful for optimization. It induces a beneficial asymmetry, strengthens the initial learning signal of composition, and improves the pathological loss landscape. After the model escapes the flat region, high-frequency skill compositions are learned first and then serve as a stepping stone for scarce long-tail skills.
-
-The takeaway is not "the tail is easier under power law." It is: power law first improves the landscape, then creates an implicit head-to-tail learning order.
-
 ## What this suggests in practice
 
-The practical lesson is not "make all training distributions more asymmetric." It is narrower:
+How do we apply the analysis to practice? A natural next step is to tune the shape of the real-world skill distribution, and try to understand if the distribution itself can help the learning of reasoning. One conjecture is that the power law already present in natural language helps LLMs learn essential reasoning circuits. A coarser-grained and more conceptual framework, such as [Skill-Mix](https://arxiv.org/abs/2310.17567), [Instruct-SkillMix](https://arxiv.org/abs/2408.14774), and related work on learning skill composition from examples, can be a starting point for asking this question at the level of real language skills rather than toy coordinates.
 
-- Evaluate memorization and composition separately. A distribution that improves one-hop recall can induce hardness for implicit composition.
-- Do not treat repeated high-frequency skills as automatically wasted. In a compositional reasoning task, they can induce the asymmetry needed for a useful initial learning signal.
-- Tune the exponent. Stronger asymmetry can improve the initial landscape and speed up head learning, but too much asymmetry slows the final long-tail phase.
-- Ask not only "do scarce long-tail skills get enough examples?", but also "does this training distribution improve the pathological loss landscape?"
-
-## What this does not show
-
-- The result does not say power-law distribution is always better. In one-hop memorization, uniform distribution learns faster.
-- The theorem is for a minimalist $k$-multiplicative composition model, not a full transformer theory.
-- The positive theorem assumes a Zipf distribution with $\alpha>1$, constant even $k$, Gaussian initialization, stable step size, sufficient batch size, and a learner matched to the compositional structure.
-- The lower bound is for uniform or symmetric input distributions and correlational statistical-query learners, which include gradient-like methods but not every possible algorithm.
-- The experiments are synthetic: state tracking, synthetic multi-hop QA, and synthetic GSM-style arithmetic.
-- Other asymmetric distributions might also help. Power-law distribution is a natural, fine-grained source of asymmetry, not the only possible one.
-
-The surprising lesson is that shifting towards uniform distribution can induce hardness for composition tasks. Power-law distribution helps not because scarce long-tail skills become common, but because it induces a beneficial asymmetry that improves the pathological loss landscape. The model first escapes the initial flat region, then learns high-frequency skills, and then uses those learned high-frequency skills as a stepping stone to learn scarce long-tail skills.
-
-The thing to remember is simple: <strong>power-law distribution helps reasoning by improving the loss landscape for compositional reasoning tasks.</strong>
+This also suggests a different way to think about curricula and synthetic data in agentic tasks. This post only studies the simplest chain-like composition. Agentic tasks often have a richer compositional graph, involving tool calls, branching decisions, memory updates, verification steps, and recovery from failed actions. A useful future direction is to ask whether changing the distribution over these latent skills and subgraphs can make agent training easier: keep enough high-frequency scaffolding skills to create a useful optimization path, while deliberately sampling rare but important tail skills once the model has enough compositional structure to benefit from them.
 
 ## References
 
@@ -419,6 +395,9 @@ The thing to remember is simple: <strong>power-law distribution helps reasoning 
 - Tian Ye, Zicheng Xu, Yuanzhi Li, and Zeyuan Allen-Zhu. [Physics of Language Models: Part 2.1, Grade-School Math and the Hidden Reasoning Process](https://arxiv.org/abs/2407.20311). arXiv, 2024.
 - Zeyuan Allen-Zhu and Yuanzhi Li. [Physics of Language Models: Part 3.2, Knowledge Manipulation](https://arxiv.org/abs/2309.14402). arXiv, 2023.
 - Yang Zhou, Hongyi Liu, Zhuoming Chen, Yuandong Tian, and Beidi Chen. [GSM-Infinite: How Do Your LLMs Behave over Infinitely Increasing Context Length and Reasoning Complexity?](https://arxiv.org/abs/2502.05252). arXiv, 2025.
+- Dingli Yu, Simran Kaur, Arushi Gupta, Jonah Brown-Cohen, Anirudh Goyal, and Sanjeev Arora. [Skill-Mix: a Flexible and Expandable Family of Evaluations for AI models](https://arxiv.org/abs/2310.17567). arXiv, 2023.
+- Simran Kaur, Simon Park, Anirudh Goyal, and Sanjeev Arora. [Instruct-SkillMix: A Powerful Pipeline for LLM Instruction Tuning](https://arxiv.org/abs/2408.14774). arXiv, 2024.
+- Haoyu Zhao, Simran Kaur, Dingli Yu, Anirudh Goyal, and Sanjeev Arora. [Can Models Learn Skill Composition from Examples?](https://arxiv.org/abs/2409.19808). arXiv, 2024.
 - William Merrill and Ashish Sabharwal. [The Parallelism Tradeoff: Limitations of Log-Precision Transformers](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log). TACL, 2023.
 - William Merrill and Ashish Sabharwal. [The Expressive Power of Transformers with Chain of Thought](https://arxiv.org/abs/2310.07923). arXiv, 2023.
 - Nouha Dziri et al. [Faith and Fate: Limits of Transformers on Compositionality](https://arxiv.org/abs/2305.18654). arXiv, 2023.
