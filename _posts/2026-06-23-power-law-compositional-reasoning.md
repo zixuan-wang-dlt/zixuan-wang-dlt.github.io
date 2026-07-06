@@ -47,7 +47,7 @@ Michaud's quanta view makes this abstraction more concrete. Think of pretraining
       <img src="https://ericjmichaud.com/quanta/assets/quanta-sequence.png" alt="Eric Michaud's quanta sequence power-law schematic">
     </a>
   </div>
-  <figcaption>Figure 1: Michaud's quanta picture has two parts: individual skills can appear as sharp learning transitions, and their use frequencies form a long-tailed sequence. Our question is what changes when the task requires composition of several skills. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
+  <figcaption>Figure 1: Michaud's quanta picture has two parts: individual skills can appear as sharp learning transitions, and their use frequencies form a long-tailed sequence. The question here is what changes when the task requires composition of several skills. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
 </figure>
 
 But the same story also exposes a problem. Under a power-law distribution, rare skills are observed only when the dataset becomes very large, while the most frequent skills may be sampled far beyond what is necessary for learning them.
@@ -114,13 +114,13 @@ Intuitively, if a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k
   <figcaption>Figure 4: The one-hop result says uniform distribution helps coverage. The multi-hop result says coverage is not enough for compositional reasoning tasks.</figcaption>
 </figure>
 
-This raises our research question: **what changes when a model has to compose skills rather than recall them one at a time? Why does a power-law distribution help language models learn reasoning?**
+This raises the main question: **what changes when a model has to compose skills rather than recall them one at a time? Why does a power-law distribution help language models learn reasoning?**
 
 ## A minimalist model of skill composition
 
-To understand why only a switch of training distribution helps in implicit compositional reasoning tasks, we look for a controlled setting of skill composition. However, transformers settings potentially have many entangled effects and can be very challenging to analyze. To isolate the effect of the data distribution, we want a minimalist task as the abstraction of multi-hop skill composition where theoretical insights can be found.
+To understand why only a switch of training distribution helps in implicit compositional reasoning tasks, we look for a controlled setting of skill composition. Transformer experiments mix many effects: representation learning, attention, finite samples, and hidden multi-step operations. To isolate the effect of the data distribution, we use a minimalist abstraction of multi-hop skill composition.
 
-Inspired and simplified from the multi-hop QA tasks, we propose the resulting task called **$k$-multiplicative composition**. It keeps three ingredients: there are $d$ fixed skills, each example asks for a composition of $k$ sampled skills, and the sampling distribution over skills can be either uniform or power-law. The task is not meant to be realistic; it is meant to preserve the core difficulty that a skill is useful only through composition with other skills.
+Inspired and simplified from the multi-hop QA tasks, we use a toy task called **$k$-multiplicative composition**. It keeps three ingredients: there are $d$ fixed skills, each example asks for a composition of $k$ sampled skills, and the sampling distribution over skills can be either uniform or power-law. The task is not meant to be realistic; it is meant to preserve the core difficulty that a skill is useful only through composition with other skills.
 
 Concretely, assume there are $d$ fixed skills $s_1,\ldots,s_d$. A skill here should be read as an atomic operation or knowledge piece. In multi-hop QA, it could be a relation; in arithmetic, it could be an operation such as $+3$ or $\times 2$. In the toy task, each skill is compressed into the simplest possible object: a hidden scalar sign $w_i^\star\in\{-1,+1\}$. The whole ground-truth knowledge is the hidden vector $w^\star=(w_1^\star,\ldots,w_d^\star)$.
 
@@ -138,21 +138,25 @@ $$
 f_w(X)=\prod_{t=1}^k (x_t^\top w)=\prod_{t=1}^k w_{I_t}.
 $$
 
-So the learning problem is to recover the hidden skill vector $w^\star$ from examples $(X,y)$. This is close to a parity task, but with one extra layer of hidden knowledge: instead of directly receiving signs to multiply, the model receives only skill names. It must first learn what hidden scalar each skill name calls, and then compose those hidden scalars correctly across $k$ hops.
+So the simplified learning problem is to recover the hidden skill vector $w^\star$ from examples $(X,y)$, with the student model identical to the teacher. This is close to a parity task, but with one extra layer of hidden knowledge: instead of directly receiving signs to multiply, the model receives only skill names. It must first learn what hidden scalar each skill name calls, and then compose those hidden scalars correctly across $k$ hops.
 
-To analyze gradient descent, the paper considers the matched learner $f_w(X)=\prod_{t=1}^k w_{I_t}$ and optimizes the population square loss $\mathcal L(w)=\frac12\mathbb E_X[(f_w(X)-f_{w^\star}(X))^2]$.
+To analyze gradient descent, we consider the matched learner $f_w(X)=\prod_{t=1}^k w_{I_t}$ and optimize the population square loss $\mathcal L(w)=\frac12\mathbb E_X[(f_w(X)-f_{w^\star}(X))^2]$.
 
 The two quantities that control the dynamics are the weighted inner product and weighted norm
+
 $$
 A(t)=\sum_{i=1}^d p_iw_i(t)w_i^\star,\qquad
 B(t)=\sum_{i=1}^d p_iw_i(t)^2.
 $$
+
 where $A(t)$ is the similarity between the current model and the ground truth under the training distribution, while $B(t)$ is the corresponding weighted norm. The key object is the population gradient. A short calculation gives
+
 $$
 \nabla \mathcal L(w(t))
 =kD\left(B(t)^{k-1}w(t)-A(t)^{k-1}w^\star\right),
 \qquad D=\mathrm{diag}(p_1,\ldots,p_d).
 $$
+
 Equivalently, the expected gradient descent update for coordinate $j$ is
 
 $$
@@ -190,25 +194,69 @@ This is the vector form of the coordinate update in the main text.
 
 ## Uniform distribution induces hardness
 
-The first theoretical result says that uniform data can make this composition task hard for gradient-based learning. Formally, it proves a correlational statistical query lower bound. Informally, if the input distribution is uniform, then a broad class of gradient-style learners needs either very accurate queries or many samples. With $q$ queries, the required tolerance satisfies $\tau^2\le (\log(dq)/d)^{k/2}$ to reach constant loss. Using the heuristic $\tau\approx 1/\sqrt n$, this corresponds to about $n\gtrsim d^{k/2}$ samples in the relevant regime. Under uniform distribution, learning the task requires $d^{\Omega(k)}$ samples or runtime.
+The first theoretical result says that uniform data can make this composition task hard for gradient-based learning. The formal tool is a correlational statistical query (CSQ) lower bound, and online SGD on the square loss belongs to this learner class. The high-level message is simple: under a uniform input distribution, learning the compositional task requires either very accurate gradient queries or a large amount of data/compute. (We will skip the formal argument, and directly jump to the insights behind the theorem below.)
 
-The intuition is symmetry. Under uniform inputs, the possible hidden targets are too balanced, and correlation-based queries reveal very little about which hidden vector is correct. The same issue appears in the gradient dynamics. If $w_i(0)\sim\mathcal N(0,r^2)$, then
+<details class="powerlaw-details" markdown="1">
+<summary>CSQ lower bound and proof sketch</summary>
+
+**Theorem.** Let the input distribution be uniform, $p_j=1/d$, and let $k\ge 2$. There exists a function class $\mathcal F_k$ and a constant $\epsilon=\Omega(1)$ such that any correlational statistical query learner using $q$ queries requires tolerance
+
+$$
+\tau^2\le \left(\frac{\log(dq)}{d}\right)^{k/2}
+$$
+
+to achieve loss $\mathcal L(w)\le \epsilon$. Using the standard heuristic $\tau\approx 1/\sqrt n$, this means either the runtime is exponential in $d$, or the sample size must be roughly $\widetilde\Omega(d^{k/2})$.
+
+**Proof sketch.** Consider the base function class $\mathcal F=\{f(w,\cdot):w\in\{\pm1\}^d\}$. Under uniform inputs, the inner product between two target functions factorizes as
+
+$$
+\langle f_{w_1},f_{w_2}\rangle
+=\mathbb E_X[f(w_1,X)f(w_2,X)]
+=\left(\frac{w_1^\top w_2}{d}\right)^k.
+$$
+
+Next, choose a large subset of hypercube vectors whose pairwise normalized inner products are small. A standard Hoeffding plus union-bound argument gives a subset of size about $\exp(\Omega(\varepsilon^2d))$ with $\left|w_1^\top w_2/d\right|\le \varepsilon$ for every distinct pair. Therefore the corresponding functions are nearly uncorrelated, and a correlational query reveals very little about which target in the class is the true one. Plugging this packing into the standard CSQ lower-bound argument yields the tolerance bound above.
+</details>
+
+The intuition behind the failure is, surprisingly, **symmetry**. Under uniform inputs, the possible hidden targets are too balanced, and correlation-based gradient queries reveal very little about which hidden vector is correct. The specific issue can be seen in the gradient dynamics. If $w_i(0)\sim\mathcal N(0,r^2)$, then
 
 $$
 \mathrm{Var}(A(w_0))=r^2\sum_{i=1}^d p_i^2.
 $$
 
-Under uniform distribution, every skill has probability $1/d$, so $\sum_i p_i^2=1/d$. The initial similarity is an average over all $d$ random coordinates, and its typical size is about $\lvert A(w_0)\rvert\approx r/\sqrt d$. Composition raises this small quantity to the power $k-1$. The useful initial signal therefore behaves like $(r/\sqrt d)^{k-1}$.
+Under uniform distribution, every skill has probability $1/d$, so $\sum_i p_i^2=1/d$. The initial similarity is an average over all $d$ random coordinates, and its typical size is about $\lvert A(w_0)\rvert\approx r/\sqrt d$. Composition raises this small quantity to the power $k-1$. The useful initial signal therefore behaves like $(r/\sqrt d)^{k-1}$, **exponentially** slowing down the training.
 
-This is the hidden cost of uniform distribution. It removes imbalance, but it also makes the initial learning signal vanish with dimension and composition length. The lower bound is distributional: it relies on a uniform or symmetric training distribution. This is why the next question is natural: can the asymmetry in a power-law distribution re-enable efficient training?
+Intuitively speaking, the results indicate that: the more complex the task is (with an increasing number $k$), the slower the training is. A larger number of skills (a larger $d$) will make the issue even worse. In summary, we have the following takeaway:
+
+
+<p class="powerlaw-punchline"><strong>Punchline.</strong> Uniform distribution fixes long-tail exposure, but for composition it can also create a symmetric hard instance: the initial alignment is tiny, the useful gradient is tiny, and gradient descent sees an almost flat landscape.</p>
 
 ## Power-law distribution re-enables efficient training
 
-The positive theorem says yes: online minibatch gradient descent can learn the same $k$-multiplicative composition task efficiently under a Zipf distribution.
+What changes under a power-law distribution? The short answer is that the head skills are sampled often enough to create a non-negligible initial alignment. This breaks the symmetry that made uniform training hard.
 
-Informally, let $p_j\propto j^{-\alpha}$ with $\alpha>1$. Suppose $k=\Theta(1)$ is even, $w(0)\sim\mathcal N(0,r^2I_d)$ with $r=\Theta(1)$, and the learning rate and batch size are in the stable regime. Then with high probability, minibatch gradient descent recovers the hidden skill vector up to error $\varepsilon$ with about $\widetilde O(d^{2\alpha}/(\eta\varepsilon))$ samples and roughly $\widetilde O((d^\alpha/\eta)\log(1/\varepsilon))$ iterations. When the composition number is large enough compared with the exponent, this beats the uniform lower-bound scaling.
+At a high level, the positive result says that online minibatch gradient descent can learn the same $k$-multiplicative composition task efficiently under a Zipf distribution. The exact assumptions and complexity bounds are useful, but the main intuition is easier to see from the first gradient step.
 
-The proof follows the population gradient above. Under a power-law distribution, the frequent skills occur with constant probability. Equivalently, $\sum_i p_i^2$ does not shrink like $1/d$. Therefore the initial weighted similarity is not washed out by averaging over all $d$ skills: $|A(0)|\approx \Theta(r)$. At the same time, for small constant initialization scale, $B(0)\approx \Theta(r^2)$. Thus the signal term dominates the first update:
+<details class="powerlaw-details" markdown="1">
+<summary>Power-law theorem and proof sketch</summary>
+
+**Theorem.** Let the input distribution be Zipf, $p_j\propto j^{-\alpha}$ with $\alpha>1$. Suppose the target error is $\varepsilon>0$, $w(0)\sim\mathcal N(0,r^2I_d)$ with $r=\Theta(1)$, $k=\Theta(1)$ is even, and the learning rate and minibatch size are in the stable regime. Then with high probability, minibatch gradient descent learns the task with about $\widetilde O(d^{2\alpha}/(\eta\varepsilon))$ samples and $t\le \widetilde O((d^\alpha/\eta)\log(1/\varepsilon))$ iterations. In particular, it recovers the hidden skill vector up to error $\varepsilon$.
+
+When the composition number is large compared with the power-law exponent, this improves over the uniform lower-bound scaling.
+
+**Proof sketch.** The proof first analyzes population gradient descent. Under a power-law distribution, head skills have constant probability, so the initial weighted alignment $|A(0)|$ is not averaged down by all $d$ skills. With small constant initialization scale, $|A(0)|\approx\Theta(r)$ while $B(0)\approx\Theta(r^2)$, so the signal term dominates the first update. This gives a large initial gradient for head skills and a clearer descent direction in the loss landscape.
+
+With this initialization behavior, one can prove a Polyak-Lojasiewicz-type condition along the stable trajectory,
+
+$$
+\|\nabla\mathcal L(w(t))\|_2^2
+\gtrsim p_{\min}A(0)^{2k-2}\mathcal L(w(t)).
+$$
+
+This guarantees convergence of the population dynamics. A finite-sample concentration argument then shows that minibatch SGD tracks this population trajectory.
+</details>
+
+The proof intuition follows the population gradient above. Under a power-law distribution, the frequent skills occur with constant probability. Equivalently, $\sum_i p_i^2$ does not shrink like $1/d$. Therefore the initial weighted similarity is not washed out by averaging over all $d$ skills: $|A(0)|\approx \Theta(r)$. At the same time, for small constant initialization scale, $B(0)\approx \Theta(r^2)$. Thus the signal term dominates the first update:
 
 $$
 w_j(1)-w_j(0)
@@ -222,26 +270,13 @@ $$
 \approx -k\,\mathrm{diag}(p)\,A(0)^{k-1}w^\star.
 $$
 
-This is the beneficial asymmetry. For high-frequency skills, $p_j$ is large enough that the initial gradient is no longer tiny. The loss landscape near initialization now has a clearer descent direction toward the lower-loss region. The paper then proves a PL-condition-like inequality along the stable population trajectory:
-
-$$
-\|\nabla\mathcal L(w(t))\|_2^2
-\gtrsim p_{\min}A(0)^{2k-2}\mathcal L(w(t)).
-$$
-
-This proves convergence for the population dynamics. A finite-sample concentration argument then shows that minibatch SGD closely tracks the population trajectory.
+This is the beneficial asymmetry. For high-frequency skills, $p_j$ is large enough that the initial gradient is no longer tiny. The loss landscape near initialization now has a clearer descent direction toward the lower-loss region.
 
 The same calculation explains why uniform distribution is hard: under uniform sampling, $p_j=1/d$ and $A(0)\approx O(1/\sqrt d)$, so the initial gradient is much smaller. Power law does not make the tail frequent. It improves the pathological initial landscape by inducing an asymmetry.
 
-<details class="powerlaw-details" markdown="1">
-<summary>The theorem assumptions, without the proof details</summary>
+<p class="powerlaw-punchline"><strong>Punchline.</strong> Power law helps not by showing the tail more often, but by breaking the symmetry first. The head creates a visible descent direction; only after that can head skills become stepping stones for the tail.</p>
 
-The statement assumes a Zipf law $p_j\propto j^{-\alpha}$ with $\alpha>1$, even constant $k$, Gaussian initialization, a stable learning rate, and a sufficiently large minibatch. Under those assumptions, the model recovers $w^\star$ up to error $\varepsilon$ with polynomial sample complexity in $d$.
-
-The proof has two parts: first show fast convergence for population gradient descent, then show that online minibatch SGD tracks this population trajectory by concentration.
-</details>
-
-The theory therefore predicts the same stage-wise mechanism emphasized in the paper:
+The theory therefore predicts a stage-wise mechanism:
 
 1. **Stage I: escaping from the flat region.** Power-law distribution improves the pathological loss landscape near initialization and strengthens the initial learning signal of composition.
 2. **Stage II: high-frequency skills help the tail.** Head skills are learned first, which increases $A(t)$ and strengthens the useful gradient for scarce long-tail skills.
@@ -249,11 +284,11 @@ The theory therefore predicts the same stage-wise mechanism emphasized in the pa
 
 ## The transformer check: state tracking
 
-The paper then checks whether the same mechanism appears in transformers. The cleanest testbed is the $S_5$ state tracking task, a synthetic composition task related to Allen-Zhu's [DePO/canon-layer setup](https://ssrn.com/abstract=5240330), Merrill and Sabharwal's transformer limits work ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)), and our [curriculum study](https://arxiv.org/abs/2505.23683).
+The next check is whether the same mechanism appears in transformers. The cleanest testbed is the $S_5$ state tracking task, a synthetic composition task related to Allen-Zhu's [DePO/canon-layer setup](https://ssrn.com/abstract=5240330) and Merrill and Sabharwal's transformer limits work ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)).
 
 In this task, the input is a sequence of group elements $g_1,g_2,\ldots,g_k\in S_5$, and the target is their composition $g_1\circ g_2\circ\cdots\circ g_k$ without chain-of-thought. The skills are the permutations themselves. The model cannot solve the task by recognizing one update rule in isolation; it has to compose the sequence.
 
-This task is known to be hard under uniform training distribution without intermediate supervision, even though there exists an efficient transformer construction for the computation. The paper finds that simply switching the skill distribution to power law enables the same model to learn the task efficiently, without curriculum or intermediate thinking traces.
+This task is known to be hard under uniform training distribution without intermediate supervision, even though there exists an efficient transformer construction for the computation. Simply switching the skill distribution to power law enables the same model to learn the task efficiently, without curriculum or intermediate thinking traces.
 
 <figure class="powerlaw-figure powerlaw-figure--pair powerlaw-figure--state">
   <div class="powerlaw-panels powerlaw-panels--state">
@@ -263,7 +298,7 @@ This task is known to be hard under uniform training distribution without interm
   <figcaption>Figure 5: State tracking is the controlled transformer version of the theory. Uniform distribution cannot learn the implicit composition task, while power-law distribution makes the same task learnable without curriculum or chain-of-thought.</figcaption>
 </figure>
 
-**Stage I: power law enables escaping from the flat region.** To visualize the landscape, the paper takes the training trajectories of the $S_5$ state tracking task under both uniform and power-law distributions. It computes the top two PCA directions from consecutive checkpoint differences and plots the loss landscape together with the trajectory. The initial region under uniform distribution is much flatter; the power-law distribution creates a clearer descent direction to the lower-loss region.
+**Stage I: power law enables escaping from the flat region.** To visualize the landscape, take the training trajectories of the $S_5$ state tracking task under both uniform and power-law distributions. Compute the top two PCA directions from consecutive checkpoint differences and plot the loss landscape together with the trajectory. The initial region under uniform distribution is much flatter; the power-law distribution creates a clearer descent direction to the lower-loss region.
 
 <figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/loss-landscape.png" alt="Uniform distribution and power-law distribution state-tracking loss landscapes">
@@ -279,13 +314,13 @@ The state tracking experiment checks this acceleration effect directly. The perm
   <figcaption>Figure 7: The transformer dynamics show the same stage-wise mechanism as the minimalist model. Head skills are learned first, then increase the gradient signal for scarce long-tail skills.</figcaption>
 </figure>
 
-**Stage III: the long-tail drawback returns.** The paper does not claim that the tail becomes easy. In the final stage, the scarce long-tail skills still appear with small probability, so convergence on the tail is slower. This is the intuitive drawback of power-law distribution, but it appears after the model has already escaped the flat region and learned useful head compositions.
+**Stage III: the long-tail drawback returns.** This does not mean that the tail becomes easy. In the final stage, the scarce long-tail skills still appear with small probability, so convergence on the tail is slower. This is the intuitive drawback of power-law distribution, but it appears after the model has already escaped the flat region and learned useful head compositions.
 
 So the story is not "asymmetry is always good." It is more specific: power-law distribution first improves the pathological landscape, then creates an implicit curriculum through high-frequency skills, and finally faces the ordinary long-tail drawback.
 
 ## Back to reasoning tasks
 
-Finally, the paper tests whether this understanding generalizes beyond the minimalist model and state tracking. It considers two synthetic natural-language reasoning tasks: multi-hop question answering and synthetic grade-school math. Only the training distribution is changed; the test sets are sampled uniformly over skills.
+Finally, we can ask whether this understanding generalizes beyond the minimalist model and state tracking. Consider two synthetic natural-language reasoning tasks: multi-hop question answering and synthetic grade-school math. Only the training distribution is changed; the test sets are sampled uniformly over skills.
 
 The first setting is multi-hop QA. The data is based on synthetic facts over relations between individuals, which can be viewed as a dependency graph:
 
@@ -341,7 +376,7 @@ The takeaway is not "the tail is easier under power law." It is: power law first
 
 ## What this suggests in practice
 
-The practical lesson is not "make all training distributions more asymmetric." It is narrower and closer to the paper:
+The practical lesson is not "make all training distributions more asymmetric." It is narrower:
 
 - Evaluate memorization and composition separately. A distribution that improves one-hop recall can induce hardness for implicit composition.
 - Do not treat repeated high-frequency skills as automatically wasted. In a compositional reasoning task, they can induce the asymmetry needed for a useful initial learning signal.
@@ -355,7 +390,7 @@ The practical lesson is not "make all training distributions more asymmetric." I
 - The positive theorem assumes a Zipf distribution with $\alpha>1$, constant even $k$, Gaussian initialization, stable step size, sufficient batch size, and a learner matched to the compositional structure.
 - The lower bound is for uniform or symmetric input distributions and correlational statistical-query learners, which include gradient-like methods but not every possible algorithm.
 - The experiments are synthetic: state tracking, synthetic multi-hop QA, and synthetic GSM-style arithmetic.
-- Other asymmetric distributions might also help. The paper treats power-law distribution as a natural, fine-grained source of asymmetry, not the only possible one.
+- Other asymmetric distributions might also help. Power-law distribution is a natural, fine-grained source of asymmetry, not the only possible one.
 
 The surprising lesson is that shifting towards uniform distribution can induce hardness for composition tasks. Power-law distribution helps not because scarce long-tail skills become common, but because it induces a beneficial asymmetry that improves the pathological loss landscape. The model first escapes the initial flat region, then learns high-frequency skills, and then uses those learned high-frequency skills as a stepping stone to learn scarce long-tail skills.
 
@@ -370,7 +405,6 @@ The thing to remember is simple: <strong>power-law distribution helps reasoning 
 - Zeyuan Allen-Zhu and Yuanzhi Li. [Physics of Language Models: Part 3.2, Knowledge Manipulation](https://arxiv.org/abs/2309.14402). arXiv, 2023.
 - William Merrill and Ashish Sabharwal. [The Parallelism Tradeoff: Limitations of Log-Precision Transformers](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log). TACL, 2023.
 - William Merrill and Ashish Sabharwal. [The Expressive Power of Transformers with Chain of Thought](https://arxiv.org/abs/2310.07923). arXiv, 2023.
-- Zixuan Wang, Eshaan Nichani, Alberto Bietti, Alex Damian, Daniel Hsu, Jason D. Lee, and Denny Wu. [Learning Compositional Functions with Transformers from Easy-to-Hard Data](https://arxiv.org/abs/2505.23683). arXiv, 2025.
 - Nouha Dziri et al. [Faith and Fate: Limits of Transformers on Compositionality](https://arxiv.org/abs/2305.18654). arXiv, 2023.
 - Yuekun Yao, Yupei Du, Dawei Zhu, Michael Hahn, and Alexander Koller. [Language Models Can Learn Implicit Multi-Hop Reasoning, but Only if They Have Lots of Training Data](https://arxiv.org/abs/2505.17923). arXiv, 2025.
 - Sanjeev Arora and Anirudh Goyal. [A Theory for Emergence of Complex Skills in Language Models](https://arxiv.org/abs/2307.15936). arXiv, 2023.

@@ -115,11 +115,16 @@
   }
 
   .page__content {
-    line-height: 1.68;
-    font-size: 1.02em;
+    line-height: 1.74;
+    font-size: 1.03em;
+
+    > p:not(.powerlaw-spoiler):not(.powerlaw-links):not(.powerlaw-punchline) {
+      margin: 0 0 1.12em;
+    }
 
     h2 {
-      margin-top: 2.1em;
+      margin-top: 2.25em;
+      margin-bottom: 0.85em;
       padding-bottom: 0.18em;
       border-bottom: 1px solid mix(#fff, $border-color, 35%);
       font-family: Georgia, "Times New Roman", serif;
@@ -139,6 +144,25 @@
 
     strong {
       color: mix(#000, $text-color, 8%);
+    }
+  }
+
+  .powerlaw-punchline {
+    margin: 1.35em 0 1.8em;
+    padding: 0.95em 1.05em;
+    border-left: 4px solid mix(#000, $primary-color, 6%);
+    border-radius: 6px;
+    background: mix(#fff, $primary-color, 92%);
+    color: mix(#000, $text-color, 8%);
+    font-size: 0.98em;
+    line-height: 1.58;
+
+    strong {
+      color: mix(#000, $primary-color, 12%);
+      font-family: $sans-serif;
+      font-size: 0.9em;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
     }
   }
 
