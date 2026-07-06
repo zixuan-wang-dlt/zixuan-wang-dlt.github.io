@@ -62,12 +62,14 @@ That is the intuition we start from. If a power-law distribution creates a long-
   <figcaption>Figure 2: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills. The puzzle is why this asymmetry improves the loss landscape for compositional reasoning tasks.</figcaption>
 </figure>
 
-## First sanity check: memorization
+## First sanity check: one-hop memorization
 
-Start with the easiest case: memorizing one fact at a time. If a relation or entity appears rarely, the model needs more direct exposure to it. In this setting, uniform distribution is the natural fix because the bottleneck is coverage of long-tail skills.
+Before asking about reasoning, start with a control task where no composition is required. In one-hop QA, each example contains a single fact of the form "entity -- relation --> answer." The question asks for that answer directly. There is no intermediate entity to carry, no second relation to apply, and no hidden chain to execute. This is memorization in the cleanest sense.
+
+In this setting, uniform distribution should help. If a relation is rare under a power-law distribution, the model simply sees fewer direct examples of that relation. Since the test set asks one-hop questions across all relations, the bottleneck is coverage of long-tail relation skills.
 
 <div class="powerlaw-example">
-  <div class="powerlaw-example__title">One-hop example</div>
+  <div class="powerlaw-example__title">One-hop memorization example</div>
   <div class="powerlaw-example__body">
     <p><strong>Fact:</strong> Anya <span>-- father --></span> Loid</p>
     <p><strong>Question:</strong> Who is the father of Anya?</p>
@@ -75,7 +77,7 @@ Start with the easiest case: memorizing one fact at a time. If a relation or ent
   </div>
 </div>
 
-The experiment behaves exactly this way. We randomly rank relations, train under either a uniform distribution or a power-law distribution, and evaluate exact match on one-hop questions. Uniform distribution wins the early race.
+The experiment behaves exactly this way. We randomly rank relations, train one model with uniformly sampled relations and another with power-law sampled relations, and evaluate exact match on one-hop questions. Uniform distribution wins the early race.
 
 <figure class="powerlaw-figure">
   <img src="/images/blog/power-law/single-hop-memorization.png" alt="Uniform distribution learns a one-hop memorization task faster than power-law distribution">
