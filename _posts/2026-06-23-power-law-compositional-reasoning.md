@@ -106,9 +106,7 @@ Now we change only the task to a more reasoning-like, <strong>multi-hop QA</stro
 
 When memorizing atomic facts, each relation can be learned almost <strong>independently</strong>. In contrast, in a two-hop QA problem, the model has to retrieve the first fact, use its answer as the input to the second fact, and only then produce the final answer.
 
-Intuitively, if a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k$, the full combination is much rarer than any one skill alone. From a pure coverage view, power-law distribution should look especially bad here: it undersamples scarce long-tail skills, and rare chains involve rare pieces. So the naive prediction is: uniform distribution should help more for multi-hop reasoning than for memorization. This makes the uniform intuition even more tempting.
-
-But the experiment goes the other way. For multi-hop QA, power-law distribution exhibits a clear gain in training speed.
+Intuitively, if a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k$, the full combination is much rarer than any one skill alone. From a pure coverage view, power-law distribution should look especially bad here: it undersamples scarce long-tail skills, and rare chains involve rare pieces. The naive prediction makes the uniform distribution even more tempting. Surprisingly, the experiment goes the other way instead: power-law distribution exhibits a clear gain in training speed.
 
 <figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/multi-hop-qa-accuracy.png" alt="Power-law distribution learns the multi-hop QA task earlier than uniform distribution">
