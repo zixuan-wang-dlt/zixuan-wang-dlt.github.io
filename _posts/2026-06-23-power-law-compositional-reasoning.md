@@ -26,11 +26,9 @@ toc_sticky: true
 
 ## Why fight a power law?
 
-Power laws are one of the most natural shapes in language. So why would we ever want to fight them?
+Power laws are one of the most natural shapes in language. At the word level, Zipf's law says that a few words appear constantly while most words are rare. At a more abstract level, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$.
 
-At the word level, Zipf's law says that a few words appear constantly while most words are rare. At a more abstract level, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$.
-
-This gives a clean story for why learning curves often look like power laws. As the dataset grows, the model gradually covers increasingly rare knowledge and skills. Michaud's quanta view makes this picture concrete: pretraining may involve many discrete modules, some retrieving knowledge and some implementing small algorithms, and these modules may have very different use frequencies.
+Michaud's quanta view makes this abstraction more concrete. Think of pretraining as learning many discrete modules, or quanta: one module might retrieve a piece of knowledge, while another might implement a small algorithm. Each quantum matters only on the tokens where it improves prediction. Some are useful almost everywhere; others are niche. If their use frequencies follow a power law, then smooth neural scaling can arise from a long sequence of discrete learning events: as we scale data, parameters, or training time, the model keeps reaching farther into the tail of useful modules.
 
 <blockquote class="powerlaw-pullquote">
   <p>The "use frequencies" of the quanta naturally follow a power law.</p>
@@ -55,7 +53,7 @@ But the same story also exposes a problem. Under a power-law distribution, rare 
 
 If the goal is to learn atomic knowledge or individual skills faster, the obvious data-curation move is to flatten the distribution: up-weight low-frequency skills, down-weight high-frequency ones, and move closer to a uniform distribution over skills. Given enough knowledge about the data and enough budget for curation, this sounds like the ideal long-tail fix.
 
-That is the intuition our paper starts from. If a power-law distribution creates a long-tail problem, shouldn't a more uniform distribution help?
+That is the intuition we start from. If a power-law distribution creates a long-tail problem, shouldn't a more uniform distribution help?
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <a href="/images/blog/power-law/distribution-comparison.pdf">
@@ -154,75 +152,80 @@ Its job is to separate the two forces that were mixed together in the experiment
 - For $k=1$, learning is local. Each example updates one skill.
 - For $k>1$, learning is global. A skill is useful only when it agrees with the other skills in the product.
 
-The important quantity is the weighted similarity between the model and the ground truth:
+To analyze gradient descent, the paper considers the matched learner
 
 $$
-A(w)=\sum_{i=1}^d p_i w_iw_i^\star.
+f_w(X)=\prod_{t=1}^k w_{I_t},\qquad w\in\mathbb R^d,
 $$
 
-This is the paper's main lens. If $A(w)$ is large, the model has a useful correlation with the target under the training distribution. If $A(w)$ is tiny, the compositional signal is hidden: the loss landscape near initialization looks almost flat to gradient descent.
-
-The population gradient has one term worth remembering:
-
-$$
-p_iA(w)^{k-1}.
-$$
-
-The factor $p_i$ is local coverage: how often skill $i$ appears. The factor $A(w)^{k-1}$ is the global compositional signal: whether the current model has enough weighted similarity with the target for composition to start moving.
-
-This is where the memorization intuition can fail. Uniform distribution helps the local coverage term for tail skills. But for composition, if uniform distribution makes $A(w)$ too small, the global signal disappears first.
-
-<details class="powerlaw-details" markdown="1">
-<summary>Optional derivation: where the gradient term comes from</summary>
-
-Train with population squared loss
+and optimizes the population square loss
 
 $$
 \mathcal L(w)=\frac12\mathbb E_X\left[\left(f_w(X)-f_{w^\star}(X)\right)^2\right].
 $$
 
-Define the weighted norm
+The two quantities that control the dynamics are the weighted inner product and weighted norm
 
 $$
-B(w)=\sum_{i=1}^d p_iw_i^2.
+A(t)=\sum_{i=1}^d p_iw_i(t)w_i^\star,\qquad
+B(t)=\sum_{i=1}^d p_iw_i(t)^2.
 $$
 
-Because the sampled skills are independent,
+Because the $k$ input skills are sampled independently,
 
 $$
-\mathbb E[f_w(X)^2]=B(w)^k,\qquad
-\mathbb E[f_w(X)f_{w^\star}(X)]=A(w)^k,
+\mathbb E[f_w(X)^2]=B(t)^k,\qquad
+\mathbb E[f_w(X)f_{w^\star}(X)]=A(t)^k.
 $$
 
-so
+So the population loss simplifies to
 
 $$
-\mathcal L(w)=\frac12\left(B(w)^k-2A(w)^k+1\right).
+\mathcal L(w)=\frac12\left(B(t)^k-2A(t)^k+1\right).
 $$
 
-Differentiating gives
+Differentiating gives the population gradient
 
 $$
-\nabla \mathcal L(w)
-=kD\left(B(w)^{k-1}w-A(w)^{k-1}w^\star\right),
+\nabla \mathcal L(w(t))
+=kD\left(B(t)^{k-1}w(t)-A(t)^{k-1}w^\star\right),
 \qquad D=\mathrm{diag}(p_1,\ldots,p_d).
 $$
 
-The useful part of the negative gradient for coordinate $i$ is
+Equivalently, the expected gradient descent update for coordinate $j$ is
 
 $$
-kp_iA(w)^{k-1}w_i^\star.
+w_j(t+1)-w_j(t)
+=\eta kp_j\left(A(t)^{k-1}w_j^\star-B(t)^{k-1}w_j(t)\right).
 $$
 
-</details>
+This equation is the theory in miniature. The factor $p_j$ is the local sampling frequency of skill $j$. The factor $A(t)^{k-1}$ is the global composition signal: it is large only when the current model has some weighted alignment with the hidden target. The second term, involving $B(t)$, controls the model's own scale. For early learning, the key question is whether the signal term
 
-## Uniform creates a symmetric hard instance
+$$
+kp_jA(t)^{k-1}w_j^\star
+$$
 
-Under uniform distribution, the task is balanced in the most literal sense. Every skill has probability $1/d$. This is good for exposure, but it also makes the function class highly symmetric: many possible hidden vectors look almost indistinguishable from the point of view of low-tolerance gradient-like queries.
+is large enough for gradient descent to move.
 
-The paper formalizes this with a correlational statistical query lower bound. Online SGD on square loss falls into this CSQ-style learner class. Under uniform inputs, a learner needs either enormous runtime or roughly $\widetilde\Omega(d^{k/2})$ samples to learn the task. When the number of skills $d$ is large and the hop number $k$ grows, that is exactly the kind of computational gap we see in hard implicit composition tasks.
+## Uniform distribution fails: lower bound
 
-The intuition is the same as the gradient calculation. At random initialization, if $w_i(0)\sim \mathcal N(0,r^2)$, then
+Can a gradient-based algorithm learn this task efficiently under uniform data? The paper's answer is no, at least for a broad correlational statistical query class that includes online SGD on square loss.
+
+Informally, when the input distribution is uniform, any CSQ learner using $q$ gradient-style queries needs tolerance
+
+$$
+\tau^2\le \left(\frac{\log(dq)}{d}\right)^{k/2}
+$$
+
+to reach constant loss. Using the usual sampling heuristic $\tau\approx 1/\sqrt n$, this means that when $q\lesssim d^{k/2}$, the learner needs about
+
+$$
+n\gtrsim d^{k/2}
+$$
+
+samples. In other words, under a uniform distribution, learning the composition task suffers from a computational gap when $d$ is large and the hop number $k$ is not tiny.
+
+The intuition is symmetry. Under uniform inputs, the function class is too balanced: many possible hidden vectors have tiny pairwise correlations, so correlation-based queries reveal very little about which hidden vector is correct. The same problem appears in the gradient dynamics. If $w_i(0)\sim\mathcal N(0,r^2)$, then
 
 $$
 \mathrm{Var}(A(w_0))=r^2\sum_{i=1}^d p_i^2.
@@ -240,69 +243,56 @@ $$
 \left(\frac{r}{\sqrt d}\right)^{k-1}.
 $$
 
-This is the hidden cost of uniform distribution. It removes imbalance, but it also washes out the small asymmetry gradient descent would need to escape the initial flat region.
+This is the hidden cost of uniform distribution. It removes imbalance, but it also makes the initial gradient tiny. The lower bound is distributional: it relies on the uniform or symmetric training distribution. That is exactly why the next question is natural: can the asymmetry in a power-law distribution break this hardness?
 
-<details class="powerlaw-details" markdown="1">
-<summary>Optional theorem detail: the uniform lower bound</summary>
+## Power-law distribution enables composition
 
-The paper proves a CSQ lower bound for the uniform setting. Informally, for the $k$-multiplicative composition task, any CSQ learner using $q$ queries needs tolerance roughly
+The positive result says yes. In contrast to uniform distribution, online minibatch gradient descent can learn the matched $k$-multiplicative model efficiently under a Zipf distribution, under the theorem's assumptions.
 
-$$
-\tau^2 \le \left(\frac{\log(dq)}{d}\right)^{k/2}
-$$
-
-to achieve constant loss. With the usual $\tau\approx 1/\sqrt n$ sampling heuristic, this means sample complexity at least $\widetilde\Omega(d^{k/2})$ for polynomially many queries.
-
-The proof uses the fact that under uniform inputs, different target functions in the class have very small correlations. The distribution is so symmetric that correlation-based queries reveal too little information about which hidden vector is the right one.
-
-</details>
-
-## Power law creates a slope
-
-Power-law distribution changes exactly the quantity that uniform distribution suppresses. If $p_i\propto i^{-\alpha}$ with $\alpha>1$, the head skills have constant-scale probability mass. Equivalently, $\sum_i p_i^2$ no longer shrinks like $1/d$. The same random initialization now has
+Informally, let $p_j\propto j^{-\alpha}$ with $\alpha>1$. Suppose $k=\Theta(1)$ is even, $w(0)\sim\mathcal N(0,r^2I_d)$ with $r=\Theta(1)$, and the learning rate and batch size are in the stable regime. Then with high probability, minibatch gradient descent recovers the hidden skill vector up to error $\varepsilon$ with about
 
 $$
-\lvert A(w_0)\rvert\approx \Theta(r).
+\widetilde O\left(\frac{d^{2\alpha}}{\eta\varepsilon}\right)
 $$
 
-That single change is the source of the separation. The useful gradient for a head skill is no longer tiny:
+samples, and within roughly
 
 $$
-kp_iA(w_0)^{k-1}w_i^\star.
+\widetilde O\left(\frac{d^\alpha}{\eta}\log\frac1\varepsilon\right)
 $$
 
-For constant-rank skills, $p_i$ is large and $A(w_0)$ is no longer washed out by $d$. The head skills get a real initial gradient, which means gradient descent has a direction to follow.
+iterations. When the composition number is large enough compared with the exponent, this beats the uniform lower-bound scaling.
 
-The formal positive result says that under Zipf($\alpha$) with $\alpha>1$, minibatch gradient descent learns the task with about $\widetilde O(d^{2\alpha})$ samples, under the theorem's assumptions on $k$, initialization, step size, batch size, and accuracy. When composition is sufficiently hard relative to the exponent, this is much better than the uniform lower bound.
+The proof idea follows the population gradient above. Under a power-law distribution, the head skills have constant-scale probability mass. Equivalently, $\sum_i p_i^2$ does not shrink like $1/d$. Therefore the initial weighted similarity is no longer washed out:
+
+$$
+|A(0)|\approx \Theta(r).
+$$
+
+At the same time, for small constant initialization scale, $B(0)\approx \Theta(r^2)$. Thus the signal term dominates the first update:
+
+$$
+w_j(1)-w_j(0)
+\approx \eta kp_jA(0)^{k-1}w_j^\star.
+$$
+
+Or, in vector form near initialization,
+
+$$
+\nabla\mathcal L(w_0)
+\approx -k\,\mathrm{diag}(p)\,A(0)^{k-1}w^\star.
+$$
+
+This is the benign asymmetry. For head skills with constant rank, $p_j=\Theta(1)$, so the initial gradient is large enough to create a real descent direction. The paper then proves a Polyak-Lojasiewicz-style inequality along the stable population trajectory:
+
+$$
+\|\nabla\mathcal L(w(t))\|_2^2
+\gtrsim p_{\min}A(0)^{2k-2}\mathcal L(w(t)).
+$$
+
+This guarantees convergence of the population GD dynamics; a finite-sample concentration argument then shows that minibatch SGD tracks the population trajectory. The same proof technique also explains why uniform distribution is hard: under uniform sampling, $p_j=1/d$ and $A(0)\approx O(1/\sqrt d)$, so the initial gradient becomes $d^{-\Omega(k)}$ and gradient descent takes polynomially or exponentially longer to escape initialization.
 
 Notice what this does and does not say. Power law is not making the tail frequent. It is making the landscape less symmetric at the start. The long-tail drawback is still real; it just becomes a later-stage bottleneck rather than the first thing that kills training.
-
-<details class="powerlaw-details" markdown="1">
-<summary>Optional proof sketch: why GD keeps descending under power law</summary>
-
-The population gradient is
-
-$$
-\nabla \mathcal L(w)
-=kD\left(B(w)^{k-1}w-A(w)^{k-1}w^\star\right).
-$$
-
-Under power-law initialization, $|A(0)|=\Theta(r)$ while $B(0)\approx r^2$. For small constant $r$, the signal term dominates early:
-
-$$
-\nabla \mathcal L(w_0)\approx -kD A(0)^{k-1}w^\star.
-$$
-
-The paper then proves a PL-style inequality along the stable population trajectory:
-
-$$
-\|\nabla \mathcal L(w(t))\|_2^2
-\gtrsim p_{\min}A(t)^{2k-2}\mathcal L(w(t)).
-$$
-
-Since $A(t)$ remains bounded below along the descent trajectory, the population loss decays. A finite-sample concentration argument shows minibatch SGD tracks this population descent with high probability.
-
-</details>
 
 The theory therefore predicts three stages:
 
