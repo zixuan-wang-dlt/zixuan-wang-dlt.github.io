@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "Why Do Asymmetric Power Laws Help Reasoning?"
+title: "Why Asymmetric Power Laws Help Reasoning?"
 description: "Uniform distribution improves long-tail coverage, but power-law distribution can improve the loss landscape for compositional reasoning by breaking symmetry."
 date: 2026-06-23
 permalink: /posts/2026/06/power-law-reasoning/
@@ -24,13 +24,13 @@ toc_sticky: true
 
 <p class="powerlaw-links">Links: <a href="https://arxiv.org/abs/2604.22951">paper</a>, <a href="https://arxiv.org/pdf/2604.22951">PDF</a>, and Eric Michaud's <a href="https://ericjmichaud.com/quanta/">quanta essay</a>.</p>
 
-## The question
+## Why fight a power law?
 
-Power laws are everywhere in language.
+Power laws are one of the most natural shapes in language. So why would we ever want to fight them?
 
-At the lexical level, this is Zipf's law: a few words appear constantly, while most words are rare. At a more abstract level, language data may also consist of many latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$.
+At the word level, Zipf's law says that a few words appear constantly while most words are rare. At a more abstract level, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$.
 
-This view is appealing because it gives a concrete story for why learning curves often look like power laws. As the dataset grows, the model gradually covers increasingly rare knowledge and skills. Michaud's quanta view makes this idea more explicit: pretraining may involve many discrete modules, some retrieving knowledge and some implementing small algorithms, with very different use frequencies. One of the assumptions is:
+This gives a clean story for why learning curves often look like power laws. As the dataset grows, the model gradually covers increasingly rare knowledge and skills. Michaud's quanta view makes this picture concrete: pretraining may involve many discrete modules, some retrieving knowledge and some implementing small algorithms, and these modules may have very different use frequencies.
 
 <blockquote class="powerlaw-pullquote">
   <p>The "use frequencies" of the quanta naturally follow a power law.</p>
@@ -53,7 +53,9 @@ This view is appealing because it gives a concrete story for why learning curves
 
 But the same story also exposes a problem. Under a power-law distribution, rare skills are observed only when the dataset becomes very large, while the most frequent skills may be sampled far beyond what is necessary for learning them.
 
-So if the goal is to learn atomic knowledge or individual skills faster, the obvious data-curation move is to make the distribution more uniform: up-weight low-frequency skills, down-weight high-frequency ones, and give every skill a fairer chance.
+If the goal is to learn atomic knowledge or individual skills faster, the obvious data-curation move is to flatten the distribution: up-weight low-frequency skills, down-weight high-frequency ones, and move closer to a uniform distribution over skills. Given enough knowledge about the data and enough budget for curation, this sounds like the ideal long-tail fix.
+
+That is the intuition our paper starts from. If a power-law distribution creates a long-tail problem, shouldn't a more uniform distribution help?
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <a href="/images/blog/power-law/distribution-comparison.pdf">
@@ -62,15 +64,9 @@ So if the goal is to learn atomic knowledge or individual skills faster, the obv
   <figcaption>Figure 2: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills. The puzzle is why this asymmetry improves the loss landscape for compositional reasoning tasks.</figcaption>
 </figure>
 
-Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), asks when this intuition breaks. We focus on compositional reasoning tasks, where the model must combine multiple reasoning skills to solve a problem.
+## First sanity check: memorization
 
-Here, "reasoning" is not just recalling one fact. It is closer to multi-step knowledge manipulation or multi-step function composition: applying one relation, carrying the intermediate result, then applying another relation; updating an internal state through several steps; or composing arithmetic operations without an explicit chain-of-thought trace. This connects to work on [knowledge manipulation](https://arxiv.org/abs/2309.14402), [implicit multi-hop reasoning](https://arxiv.org/abs/2505.17923), state tracking, and the limits of transformer composition ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)).
-
-The surprising claim is that shifting towards uniform distribution may not always be the best choice. For memorization, uniform distribution helps coverage. For compositional reasoning, uniform distribution can induce hardness because it makes the optimization landscape too symmetric near initialization.
-
-## Why uniform distribution looks right
-
-Start with memorization. If a relation or entity appears rarely, the model needs more direct exposure to it. In this setting, uniform distribution is the natural fix because the bottleneck is coverage of long-tail skills.
+Start with the easiest case: memorizing one fact at a time. If a relation or entity appears rarely, the model needs more direct exposure to it. In this setting, uniform distribution is the natural fix because the bottleneck is coverage of long-tail skills.
 
 <div class="powerlaw-example">
   <div class="powerlaw-example__title">One-hop example</div>
@@ -81,7 +77,7 @@ Start with memorization. If a relation or entity appears rarely, the model needs
   </div>
 </div>
 
-That intuition shows up cleanly in a one-hop QA experiment. We randomly rank relations, train under either a uniform distribution or a power-law distribution, and evaluate exact match. Uniform distribution wins the early race.
+The experiment behaves exactly this way. We randomly rank relations, train under either a uniform distribution or a power-law distribution, and evaluate exact match on one-hop questions. Uniform distribution wins the early race.
 
 <figure class="powerlaw-figure">
   <img src="/images/blog/power-law/single-hop-memorization.png" alt="Uniform distribution learns a one-hop memorization task faster than power-law distribution">
@@ -90,7 +86,13 @@ That intuition shows up cleanly in a one-hop QA experiment. We randomly rank rel
 
 If the task were only to store isolated facts, "use a power-law distribution" would be a strange recommendation. High-frequency skills are already frequent; scarce long-tail skills need data. Shifting towards a uniform distribution gives every skill a fairer chance.
 
-**Now change only the task.** Instead of asking for one relation, ask for a chain. The model must apply one relation, keep the intermediate entity around, and then apply another relation.
+## What if the task is multi-hop?
+
+Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), asks what happens when the goal is not to recall one atomic fact, but to compose several skills to solve a problem.
+
+Here, "reasoning" means multi-step knowledge manipulation or multi-step function composition: apply one relation, carry the intermediate result, then apply another relation; update an internal state through several steps; or compose arithmetic operations without an explicit chain-of-thought trace. This is the regime studied in work on [knowledge manipulation](https://arxiv.org/abs/2309.14402), [implicit multi-hop reasoning](https://arxiv.org/abs/2505.17923), state tracking, and transformer limits on composition ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)).
+
+Now change only the task. Instead of asking for one relation, ask for a chain. The model must apply one relation, keep the intermediate entity around, and then apply another relation.
 
 <div class="powerlaw-example">
   <div class="powerlaw-example__title">Two-hop example</div>
@@ -115,11 +117,15 @@ But the experiment goes the other way.
   <figcaption>Figure 4: The one-hop result says uniform distribution helps coverage. The multi-hop result says coverage is not enough for compositional reasoning tasks.</figcaption>
 </figure>
 
-The question is no longer "is uniform distribution good or bad?" The question is: **what changes when a model has to compose skills rather than recall them one at a time?**
+So the puzzle is not "is uniform distribution good or bad?" For isolated facts, uniform distribution is good for the expected reason: it improves exposure. The real question is: **what changes when a model has to compose skills rather than recall them one at a time?**
+
+Our answer is that composition changes the optimization geometry. Uniform distribution removes imbalance, but it can also make the loss landscape too symmetric near initialization. Power-law distribution breaks this symmetry and creates the first useful descent signal.
+
+To see this without all the moving parts of a transformer, we need a toy task where the only thing left is skill composition under a training distribution.
 
 ## A minimalist model of skill composition
 
-Towards understanding why only a switch of training distribution helps in implicit compositional reasoning tasks, we want the simplest model that still contains skill composition.
+To understand why only a switch of training distribution can flip the result, we want the simplest model that still contains skill composition.
 
 Real transformer experiments are too entangled for this purpose. In multi-hop QA, state tracking, or arithmetic, the model is learning representations, using attention, dealing with finite samples, and composing several hidden operations at the same time. If power-law distribution helps there, it is hard to tell which part of the system is responsible.
 
