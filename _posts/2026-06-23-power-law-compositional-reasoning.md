@@ -26,13 +26,11 @@ toc_sticky: true
 
 ## The question
 
-If language data consists of many latent skills and knowledge pieces, should we make their training frequencies uniform?
+Power laws are everywhere in language.
 
-The tempting answer is yes. Natural language follows a power-law distribution: a few skills and knowledge pieces appear frequently, while most long-tail skills appear at very low frequency. Under this view, rare skills are observed only when the dataset becomes very large, while the most frequent skills may be repeatedly sampled far beyond what is necessary for learning them.
+At the lexical level, this is Zipf's law: a few words appear constantly, while most words are rare. At a more abstract level, language data may also consist of many latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$.
 
-If we knew the underlying skill distribution and had the budget to curate data, a natural move would be to shift the training data towards a uniform distribution over skills: up-weight low-frequency skills, down-weight high-frequency ones, and give every skill a fairer chance.
-
-Michaud's quanta view is one way to make this setup concrete: pretraining may involve many discrete modules, some retrieving knowledge and some implementing small algorithms, with very different use frequencies. One of the assumptions is:
+This view is appealing because it gives a concrete story for why learning curves often look like power laws. As the dataset grows, the model gradually covers increasingly rare knowledge and skills. Michaud's quanta view makes this idea more explicit: pretraining may involve many discrete modules, some retrieving knowledge and some implementing small algorithms, with very different use frequencies. One of the assumptions is:
 
 <blockquote class="powerlaw-pullquote">
   <p>The "use frequencies" of the quanta naturally follow a power law.</p>
@@ -53,11 +51,9 @@ Michaud's quanta view is one way to make this setup concrete: pretraining may in
   <figcaption>Figure 1: Michaud's quanta picture has two parts: individual skills can appear as sharp learning transitions, and their use frequencies form a long-tailed sequence. Our question is what changes when the task requires composition of several skills. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
 </figure>
 
-Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), asks when this uniform-distribution intuition breaks. We focus on compositional reasoning tasks, where the model must combine multiple skills before answering.
+But the same story also exposes a problem. Under a power-law distribution, rare skills are observed only when the dataset becomes very large, while the most frequent skills may be sampled far beyond what is necessary for learning them.
 
-**But if the task is multi-hop?** This is where the long-tail intuition starts to wobble. A multi-hop example is not just a rare item; it requires composition of several skills.
-
-The answer is not merely that high-frequency skills benefit scarce long-tail skills. The paper's point is sharper: uniform distribution induces hardness for composition tasks because of symmetry and a pathological loss landscape. Power-law distribution induces a beneficial asymmetry, improves the initial loss landscape, and gives gradient descent a clearer descent direction before the model has learned the skills. Only after this escape do learned high-frequency skills become useful stepping stones for scarce long-tail skills.
+So if the goal is to learn atomic knowledge or individual skills faster, the obvious data-curation move is to make the distribution more uniform: up-weight low-frequency skills, down-weight high-frequency ones, and give every skill a fairer chance.
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <a href="/images/blog/power-law/distribution-comparison.pdf">
@@ -65,6 +61,12 @@ The answer is not merely that high-frequency skills benefit scarce long-tail ski
   </a>
   <figcaption>Figure 2: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills. The puzzle is why this asymmetry improves the loss landscape for compositional reasoning tasks.</figcaption>
 </figure>
+
+Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), asks when this intuition breaks. We focus on compositional reasoning tasks, where the model must combine multiple reasoning skills to solve a problem.
+
+Here, "reasoning" is not just recalling one fact. It is closer to multi-step knowledge manipulation or multi-step function composition: applying one relation, carrying the intermediate result, then applying another relation; updating an internal state through several steps; or composing arithmetic operations without an explicit chain-of-thought trace. This connects to work on [knowledge manipulation](https://arxiv.org/abs/2309.14402), [implicit multi-hop reasoning](https://arxiv.org/abs/2505.17923), state tracking, and the limits of transformer composition ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)).
+
+The surprising claim is that shifting towards uniform distribution may not always be the best choice. For memorization, uniform distribution helps coverage. For compositional reasoning, uniform distribution can induce hardness because it makes the optimization landscape too symmetric near initialization.
 
 ## Why uniform distribution looks right
 
@@ -117,7 +119,13 @@ The question is no longer "is uniform distribution good or bad?" The question is
 
 ## A minimalist model of skill composition
 
-Analyzing transformers trained on compositional reasoning tasks is hard: attention, layers, finite samples, and representation learning are all entangled. To isolate the landscape mechanism, the paper introduces a minimalist skill-composition task: **$k$-multiplicative composition**.
+Towards understanding why only a switch of training distribution helps in implicit compositional reasoning tasks, we want the simplest model that still contains skill composition.
+
+Real transformer experiments are too entangled for this purpose. In multi-hop QA, state tracking, or arithmetic, the model is learning representations, using attention, dealing with finite samples, and composing several hidden operations at the same time. If power-law distribution helps there, it is hard to tell which part of the system is responsible.
+
+So the paper strips the problem down to a minimalist task. The toy task should keep the pieces that matter for the question: there are many fixed skills, each example asks for a composition of $k$ sampled skills, and the training distribution over skills can be either uniform or power-law. Everything else is removed.
+
+This leads to **$k$-multiplicative composition**. It is similar in spirit to state tracking: a sequence of input functions has to be composed before the answer is known. The difference is that each skill is now only a hidden scalar sign, and the composition operation is multiplication. That makes the landscape analyzable while preserving the core difficulty: a skill is not useful alone; it is useful only through composition with other skills.
 
 There are $d$ skills. Skill $i$ has a hidden sign $w_i^\star$, equal to either $-1$ or $+1$. A training example samples $k$ skills from a distribution $p$, and the label is the product of their hidden signs:
 
@@ -130,6 +138,8 @@ The model stores one parameter $w_i$ per skill and predicts the same kind of pro
 $$
 f_w(X)=\prod_{t=1}^k w_{I_t}.
 $$
+
+You can think of this as a parity-like task with hidden knowledge behind each input skill. The input tells the model which skills appear; the model has to uncover the hidden scalar attached to each skill and compose them correctly.
 
 This model is not meant to be realistic. The simplification is intentional: the hidden skills are fixed, the sampled skills are independent, and all transformer machinery is stripped away. What remains is the part we want to isolate: composition under a training distribution.
 
