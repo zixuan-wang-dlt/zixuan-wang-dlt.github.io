@@ -254,6 +254,24 @@
     }
   }
 
+  .powerlaw-remark {
+    margin: -0.2em 0 1.35em;
+    color: mix(#fff, $text-color, 34%);
+    font-family: $sans-serif;
+    font-size: 0.82em;
+    line-height: 1.5;
+
+    strong {
+      color: mix(#fff, $text-color, 22%);
+      font-weight: 700;
+    }
+
+    a {
+      color: inherit;
+      text-decoration-color: mix(#fff, $text-color, 55%);
+    }
+  }
+
   .powerlaw-details {
     // Optional derivation blocks used by the power-law reasoning post.
     margin: 1.15em 0 1.65em;

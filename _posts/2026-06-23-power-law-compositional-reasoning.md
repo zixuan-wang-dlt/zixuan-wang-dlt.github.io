@@ -24,11 +24,11 @@ toc_sticky: true
 
 <p class="powerlaw-links">Links: <a href="https://arxiv.org/abs/2604.22951">paper</a>, <a href="https://arxiv.org/pdf/2604.22951">PDF</a>, and Eric Michaud's <a href="https://ericjmichaud.com/quanta/">quanta essay</a>.</p>
 
-## Why fight a power law?
+## Why power law?
 
 Power laws are one of the most natural shapes in language. At the word level, Zipf's law says that a few words appear constantly while most words are rare. At a more abstract level, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$.
 
-Michaud's quanta view makes this abstraction more concrete. Think of pretraining as learning many discrete modules, or quanta: one module might retrieve a piece of knowledge, while another might implement a small algorithm. Each quantum matters only on the tokens where it improves prediction. Some are useful almost everywhere; others are niche. If their use frequencies follow a power law, then smooth neural scaling can arise from a long sequence of discrete learning events: as we scale data, parameters, or training time, the model keeps reaching farther into the tail of useful modules.
+Michaud's quanta view makes this abstraction more concrete. Think of pretraining as learning many discrete modules, or quanta: one module might retrieve a piece of knowledge, while another might implement a small algorithm. Each quantum matters only on the tokens where it improves prediction. If their use frequencies follow a power law, then smooth neural scaling can arise from a long sequence of discrete learning events: as we scale data, parameters, or training time, the model keeps reaching farther into the tail of useful modules.
 
 <blockquote class="powerlaw-pullquote">
   <p>The "use frequencies" of the quanta naturally follow a power law.</p>
@@ -62,11 +62,11 @@ That is the intuition we start from. If a power-law distribution creates a long-
   <figcaption>Figure 2: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills. The puzzle is why this asymmetry improves the loss landscape for compositional reasoning tasks.</figcaption>
 </figure>
 
-## First sanity check: one-hop memorization
+## Sanity check: memorization on one-hops
 
-Before asking about reasoning, start with a control task where no composition is required. In one-hop QA, each example contains a single fact of the form "entity -- relation --> answer." The question asks for that answer directly. There is no intermediate entity to carry, no second relation to apply, and no hidden chain to execute. This is memorization in the cleanest sense.
+We start with a task where memorizing atomic knowledge is required, one-hop Question Answering (QA). Each example contains a single fact of the form "entity -- relation --> answer." The question asks for that answer directly. There is no intermediate entity to carry, no second relation to apply, and no hidden chain to execute. This is memorization in the cleanest sense.
 
-In this setting, uniform distribution should help. If a relation is rare under a power-law distribution, the model simply sees fewer direct examples of that relation. Since the test set asks one-hop questions across all relations, the bottleneck is coverage of long-tail relation skills.
+In this setting, if a relation is rare under a power-law distribution, the model simply sees fewer direct examples of that relation. Since the test set asks one-hop questions across all relations, the bottleneck is coverage of long-tail relation skills. Therefore, uniform distribution should help on this task.
 
 <div class="powerlaw-example">
   <div class="powerlaw-example__title">One-hop memorization example</div>
@@ -77,20 +77,22 @@ In this setting, uniform distribution should help. If a relation is rare under a
   </div>
 </div>
 
-The experiment behaves exactly this way. We randomly rank relations, train one model with uniformly sampled relations and another with power-law sampled relations, and evaluate exact match on one-hop questions. Uniform distribution wins the early race.
+The experiment behaves exactly this way. We randomly rank relations, train one model with uniformly sampled relations and another with power-law sampled relations, and evaluate exact match on one-hop questions. Uniform distribution wins this race.
 
 <figure class="powerlaw-figure">
   <img src="/images/blog/power-law/single-hop-memorization.png" alt="Uniform distribution learns a one-hop memorization task faster than power-law distribution">
   <figcaption>Figure 3: For one-hop memorization, the usual long-tail intuition is correct. Uniform distribution gives rare relations more exposure and reaches high exact match faster.</figcaption>
 </figure>
 
-If the task were only to store isolated facts, "use a power-law distribution" would be a strange recommendation. High-frequency skills are already frequent; scarce long-tail skills need data. Shifting towards a uniform distribution gives every skill a fairer chance.
+In all, if the task were only to store isolated facts, "use a power-law distribution" would be a strange recommendation. High-frequency skills are already frequent; scarce long-tail skills need data. Shifting towards a uniform distribution gives every skill a fairer chance.
 
 ## What if the task is multi-hop?
 
 Our paper, [The Power of Power Law: Asymmetry Enables Compositional Reasoning](https://arxiv.org/abs/2604.22951), asks what happens when the goal is not to recall one atomic fact, but to compose several skills to solve a problem.
 
-Here, "reasoning" means multi-step knowledge manipulation or multi-step function composition: apply one relation, carry the intermediate result, then apply another relation; update an internal state through several steps; or compose arithmetic operations without an explicit chain-of-thought trace. This is the regime studied in work on [knowledge manipulation](https://arxiv.org/abs/2309.14402), [implicit multi-hop reasoning](https://arxiv.org/abs/2505.17923), state tracking, and transformer limits on composition ([parallelism](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log), [chain of thought](https://arxiv.org/abs/2310.07923)).
+Here, "reasoning" means multi-step knowledge manipulation or multi-step function composition: apply one relation, carry the intermediate result, then apply another relation; update an internal state through several steps; or compose arithmetic operations without an explicit chain-of-thought trace.
+
+<p class="powerlaw-remark"><strong>Remark.</strong> This framing is close to work on <a href="https://arxiv.org/abs/2309.14402">knowledge manipulation</a>, <a href="https://arxiv.org/abs/2505.17923">implicit multi-hop reasoning</a>, state tracking, and transformer limits on composition (<a href="https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00562/116410/The-Parallelism-Tradeoff-Limitations-of-Log">parallelism</a>, <a href="https://arxiv.org/abs/2310.07923">chain of thought</a>).</p>
 
 Now change only the task. Instead of asking for one relation, ask for a chain. The model must apply one relation, keep the intermediate entity around, and then apply another relation.
 
