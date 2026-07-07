@@ -21,15 +21,32 @@ toc_sticky: true
 related: false
 ---
 
-<p class="powerlaw-spoiler"><strong>Spoiler:</strong> <strong>Power-law distribution fixes the landscape for reasoning.</strong> For memorizing facts, an asymmetric power-law distribution hinders rare facts from getting seen. But for compositional reasoning, the bottleneck changes: uniform distribution can make the loss landscape symmetric and nearly flat near initialization, while power-law distribution breaks this symmetry and creates the first useful descent signal.</p>
+<p class="powerlaw-spoiler"><strong>Spoiler:</strong> <strong>Power-law distribution fixes the landscape for reasoning.</strong> For memorization, a power-law distribution hinders rare facts from getting seen. But for reasoning, the bottleneck changes: uniform distribution can make loss landscape flat near initialization, while power-law breaks this symmetry and creates the useful descent signal.</p>
 
 <p class="powerlaw-links">Links: <a href="https://arxiv.org/abs/2604.22951">paper</a>, <a href="https://arxiv.org/pdf/2604.22951">PDF</a>, and Eric Michaud's <a href="https://ericjmichaud.com/quanta/">quanta essay</a>.</p>
 
-## Why power law?
+## How to make LLM learn to reason efficiently?
 
-Power laws are one of the most natural shapes in language. At the word level, Zipf's law says that a few words appear constantly while most words are rare. At a more abstract level, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$.
+Suppose you are asked to train an LLM to solve reasoning tasks (e.g. grade school math problems) with as few tokens as possible. How will you design your training distribution?
 
-One useful way to make this abstraction concrete is the quanta hypothesis from [Michaud et al.](https://arxiv.org/abs/2303.13506), later discussed in Michaud's [quanta essay](https://ericjmichaud.com/quanta/). Imagine pretraining as learning many discrete modules, or quanta. A quantum might retrieve a piece of knowledge, implement a small algorithm, or support a narrow capability. It matters only on the tokens where it improves prediction, so each quantum has a "use frequency." If these use frequencies are power-law distributed, then smooth neural scaling can arise from many discrete learning events being averaged together: as we scale data, parameters, or training time, the model reaches farther into the tail of useful modules.
+Let's say you are only allowed to change the distribution of the **numbers**, which is the most basic "knowledge" of the arithmetic. One option is the standard uniform distribution, sampling every number with roughly equal probability. Another option is an asymmetric power-law distribution. Then which one will you choose?
+
+<figure class="powerlaw-figure powerlaw-figure--wide">
+  <a href="/images/blog/power-law/distribution-comparison.pdf">
+    <img src="/images/blog/power-law/distribution-comparison.png" alt="Uniform and power-law skill distributions">
+  </a>
+  <figcaption>Figure 1: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills. </figcaption>
+</figure>
+
+
+## Motivation: Why Power Law v.s. Uniform?
+
+The motivation is straightforward: power laws are one of the most natural shapes in language. At the word level, Zipf's law says that a few words appear constantly while most words are rare. More generally, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$. This viewpoint can also explain why loss may decrease smoothly as a power law: many discrete skill-learning events get averaged together as the model reaches farther into the tail ([Michaud et al.](https://arxiv.org/abs/2303.13506)).
+
+<details class="powerlaw-details" markdown="1">
+<summary>Background: quanta and power-law skill frequencies</summary>
+
+One useful way to make this abstraction concrete is the quanta hypothesis from [Michaud et al.](https://arxiv.org/abs/2303.13506), later discussed in Michaud's [quanta essay](https://ericjmichaud.com/quanta/). Imagine pretraining as learning many discrete modules, or quanta. A quantum might retrieve a piece of knowledge, implement a small algorithm, or support a narrow capability. It matters only on the tokens where it improves prediction, so each quantum has a "use frequency." If these use frequencies are power-law distributed, then smooth neural scaling can arise from many discrete learning events being averaged together: as we scale data, parameters, or training time, the model reaches farther into the tail of useful quanta.
 
 <blockquote class="powerlaw-pullquote">
   <p>The "use frequencies" of the quanta naturally follow a power law.</p>
@@ -47,21 +64,16 @@ One useful way to make this abstraction concrete is the quanta hypothesis from [
       <img src="https://ericjmichaud.com/quanta/assets/quanta-sequence.png" alt="Eric Michaud's quanta sequence power-law schematic">
     </a>
   </div>
-  <figcaption>Figure 1: Michaud's quanta picture has two parts: individual skills can appear as sharp learning transitions, and their use frequencies form a long-tailed sequence. The question here is what changes when the task requires composition of several skills. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
+  <figcaption>Figure 2: Michaud's quanta picture has two parts: individual skills can appear as sharp learning transitions, and their use frequencies form a long-tailed sequence. The question here is what changes when the task requires composition of several skills. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
 </figure>
 
-But the same story also exposes a problem. Under a power-law distribution, rare skills are observed only when the dataset becomes very large, while the most frequent skills may be sampled far beyond what is necessary for learning them.
+</details>
+
+But this picture of power law also exposes a problem: **the long tail effect**. Under a power-law distribution, rare skills are observed only when the dataset becomes very large, while the most frequent skills may be sampled far beyond what is necessary for learning them.
 
 If the goal is to learn atomic knowledge or individual skills faster, the obvious data-curation move is to flatten the distribution: up-weight low-frequency skills, down-weight high-frequency ones, and move closer to a uniform distribution over skills. Given enough knowledge about the data and enough budget for curation, this sounds like the ideal long-tail fix.
 
 That is the intuition we start from. If a power-law distribution creates a long-tail problem, shouldn't a more uniform distribution help?
-
-<figure class="powerlaw-figure powerlaw-figure--wide">
-  <a href="/images/blog/power-law/distribution-comparison.pdf">
-    <img src="/images/blog/power-law/distribution-comparison.png" alt="Uniform and power-law skill distributions">
-  </a>
-  <figcaption>Figure 2: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills. The puzzle is why this asymmetry improves the loss landscape for compositional reasoning tasks.</figcaption>
-</figure>
 
 ## Sanity check: one-hop memorization
 
@@ -201,7 +213,7 @@ The results thus indicate that the more complex the task is (with an increasing 
 <p class="powerlaw-punchline"><strong>Punchline.</strong> Uniform distribution fixes long-tail exposure, but for composition it can also create a symmetric hard instance: the initial alignment is tiny, the useful gradient is tiny, and gradient descent sees an almost flat landscape.</p>
 
 <p class="powerlaw-remark"><strong>Remark.</strong>
-The rigorous theoretical result uses another tool called correlational statistical query (CSQ) lower bound Under a uniform input distribution, learning the compositional task requires either very accurate gradient queries or a large amount of data/compute. <details class="powerlaw-details" markdown="1">
+The rigorous theoretical result uses another tool called correlational statistical query (CSQ) lower bound. Under a uniform input distribution, learning the compositional task requires either very accurate gradient queries or a large amount of data/compute. <details class="powerlaw-details" markdown="1">
 <summary>CSQ lower bound and proof sketch</summary>
 
 **Theorem.** Let the input distribution be uniform, $p_j=1/d$, and let $k\ge 2$. There exists a function class $\mathcal F_k$ and a constant $\epsilon=\Omega(1)$ such that any correlational statistical query learner using $q$ queries requires tolerance
@@ -320,7 +332,7 @@ This task is known to be hard under uniform training distribution without interm
   <figcaption>Figure 7: The transformer dynamics show the same stage-wise mechanism as the minimalist model. Head skills are learned first, then increase the gradient signal for scarce long-tail skills.</figcaption>
 </figure>
 
-So the state-tracking experiment mirrors the theory: power-law distribution first improves the pathological landscape, then creates an implicit curriculum through high-frequency skills, and finally faces the ordinary long-tail drawback.
+So the state-tracking experiment mirrors the theory: power-law distribution first improves the initial landscape, then creates an implicit curriculum through high-frequency skills, and finally faces the ordinary long-tail drawback.
 
 ## Back to reasoning tasks
 
@@ -375,6 +387,10 @@ Across these tasks, the pattern is consistent with the theory. Power-law trainin
 How do we apply the analysis to practice? A natural next step is to tune the shape of the real-world skill distribution, and try to understand if the distribution itself can help the learning of reasoning. One conjecture is that the power law already present in natural language helps LLMs learn essential reasoning circuits. A coarser-grained and more conceptual framework, such as [Skill-Mix](https://arxiv.org/abs/2310.17567), [Instruct-SkillMix](https://arxiv.org/abs/2408.14774), and related work on learning skill composition from examples, can be a starting point for asking this question at the level of real language skills rather than toy coordinates.
 
 This also suggests a different way to think about curricula and synthetic data in agentic tasks. This post only studies the simplest chain-like composition. Agentic tasks often have a richer compositional graph, involving tool calls, branching decisions, memory updates, verification steps, and recovery from failed actions. A useful future direction is to ask whether changing the distribution over these latent skills and subgraphs can make agent training easier: keep enough high-frequency scaffolding skills to create a useful optimization path, while deliberately sampling rare but important tail skills once the model has enough compositional structure to benefit from them.
+
+## Conclusion
+
+The main lesson is not that power-law data is always better, or that uniform data is always worse. It is more specific: when a task requires implicit composition, the training distribution changes not only which skills are seen, but also what gradient descent sees at the beginning of training. Uniform sampling can be better for exposing rare facts, while power-law sampling can make the first useful compositional direction easier to find.
 
 ## References
 
