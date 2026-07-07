@@ -29,7 +29,7 @@ related: false
 
 Power laws are one of the most natural shapes in language. At the word level, Zipf's law says that a few words appear constantly while most words are rare. At a more abstract level, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$.
 
-Michaud's quanta view makes this abstraction more concrete. Think of pretraining as learning many discrete modules, or quanta: one module might retrieve a piece of knowledge, while another might implement a small algorithm. Each quantum matters only on the tokens where it improves prediction. If their use frequencies follow a power law, then smooth neural scaling can arise from a long sequence of discrete learning events: as we scale data, parameters, or training time, the model keeps reaching farther into the tail of useful modules.
+One useful way to make this abstraction concrete is the quanta hypothesis from [Michaud et al.](https://arxiv.org/abs/2303.13506), later discussed in Michaud's [quanta essay](https://ericjmichaud.com/quanta/). Imagine pretraining as learning many discrete modules, or quanta. A quantum might retrieve a piece of knowledge, implement a small algorithm, or support a narrow capability. It matters only on the tokens where it improves prediction, so each quantum has a "use frequency." If these use frequencies are power-law distributed, then smooth neural scaling can arise from many discrete learning events being averaged together: as we scale data, parameters, or training time, the model reaches farther into the tail of useful modules.
 
 <blockquote class="powerlaw-pullquote">
   <p>The "use frequencies" of the quanta naturally follow a power law.</p>
