@@ -46,13 +46,13 @@ The motivation is straightforward: power laws are one of the most natural shapes
 <details class="powerlaw-details" markdown="1">
 <summary>Background: quanta and power-law skill frequencies</summary>
 
-One useful way to make this abstraction concrete is the quanta hypothesis from [Michaud et al.](https://arxiv.org/abs/2303.13506), later discussed in Michaud's [quanta essay](https://ericjmichaud.com/quanta/). Imagine pretraining as learning many discrete modules, or quanta. A quantum might retrieve a piece of knowledge, implement a small algorithm, or support a narrow capability. It matters only on the tokens where it improves prediction, so each quantum has a "use frequency." If these use frequencies are power-law distributed, then smooth neural scaling can arise from many discrete learning events being averaged together: as we scale data, parameters, or training time, the model reaches farther into the tail of useful quanta.
+One useful support to this concrete viewpoint is the quanta hypothesis from [Michaud et al.](https://arxiv.org/abs/2303.13506), later discussed in Michaud's [quanta essay](https://ericjmichaud.com/quanta/). Imagine pretraining as learning many discrete modules, or quanta. A quantum might retrieve a piece of knowledge, implement a small algorithm, or support a narrow capability. It matters only on the tokens where it improves prediction, so each quantum has a "use frequency." If these use frequencies are power-law distributed, then smooth neural scaling can arise from many discrete learning events being averaged together: as we scale data, parameters, or training time, the model reaches farther into the tail of useful quanta.
 
 <blockquote class="powerlaw-pullquote">
   <p>The "use frequencies" of the quanta naturally follow a power law.</p>
   <cite>Eric Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a></cite>
 </blockquote>
-
+</details>
 <figure class="powerlaw-figure powerlaw-figure--pair">
   <div class="powerlaw-panels powerlaw-panels--middle">
     <a href="https://ericjmichaud.com/quanta/">
@@ -64,10 +64,8 @@ One useful way to make this abstraction concrete is the quanta hypothesis from [
       <img src="https://ericjmichaud.com/quanta/assets/quanta-sequence.png" alt="Eric Michaud's quanta sequence power-law schematic">
     </a>
   </div>
-  <figcaption>Figure 2: Michaud's quanta picture has two parts: individual skills can appear as sharp learning transitions, and their use frequencies form a long-tailed sequence. The question here is what changes when the task requires composition of several skills. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
+  <figcaption>Figure 2: Individual skills can appear as sharp learning transitions but forming a smooth pre-training loss curve together. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
 </figure>
-
-</details>
 
 But this picture of power law also exposes a problem: **the long tail effect**. Under a power-law distribution, rare skills are observed only when the dataset becomes very large, while the most frequent skills may be sampled far beyond what is necessary for learning them.
 
