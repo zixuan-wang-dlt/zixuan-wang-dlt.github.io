@@ -29,7 +29,7 @@ related: false
 
 Suppose you are asked to train an LLM to solve multi-step arithmetic (e.g. $a+b\times c -d\div e=?$) with as few training steps as possible. How should you design your training distribution?
 
-Let's say you are only allowed to change the training distribution of the **numbers**, which is the most basic "knowledge" of the arithmetic. One option is the standard uniform distribution, sampling every number with roughly equal probability. Another option is an asymmetric power-law distribution. Then which one will you choose?
+Let's say you are only allowed to change the training distribution of the **numbers**, which is the most basic "knowledge" of the arithmetic. One option is the standard uniform distribution, sampling every number with roughly equal probability. Another option is an asymmetric power-law distribution: rank all the numbers randomly, assigning probabilities according to power law, and sample accordingly. Which one will you choose?
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <a href="/images/blog/power-law/distribution-comparison.pdf">
