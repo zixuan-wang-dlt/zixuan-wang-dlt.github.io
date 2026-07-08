@@ -20,9 +20,6 @@ toc: true
 toc_sticky: true
 related: false
 ---
-
-<p class="powerlaw-spoiler"><strong>Spoiler:</strong> <strong>Power-law distribution fixes the landscape for reasoning.</strong> For memorization, a power-law distribution hinders rare facts from getting seen. But for reasoning, the bottleneck changes: uniform distribution can make loss landscape flat near initialization, while power-law breaks this symmetry and creates the useful descent signal.</p>
-
 <p class="powerlaw-links">Links: <a href="https://arxiv.org/abs/2604.22951">paper</a>, <a href="https://arxiv.org/pdf/2604.22951">PDF</a>, and Eric Michaud's <a href="https://ericjmichaud.com/quanta/">quanta essay</a>.</p>
 
 ## How to make LLM learn to reason efficiently?
