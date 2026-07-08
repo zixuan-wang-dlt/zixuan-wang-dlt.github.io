@@ -27,7 +27,7 @@ related: false
 
 ## How to make LLM learn to reason efficiently?
 
-Suppose you are asked to train an LLM to solve multi-step arithmetic (e.g. $a+b\times c -d\div e=?$) with as few training steps as possible. How should you design your training distribution, given a uniform test distribution?
+Suppose you are asked to train an LLM to solve multi-step arithmetic (e.g. $a+b\times c -d\div e=?$) with as few training steps as possible. How should you design your training distribution?
 
 Let's say you are only allowed to change the training distribution of the **numbers**, which is the most basic "knowledge" of the arithmetic. One option is the standard uniform distribution, sampling every number with roughly equal probability. Another option is an asymmetric power-law distribution. Then which one will you choose?
 
@@ -38,7 +38,7 @@ Let's say you are only allowed to change the training distribution of the **numb
   <figcaption>Figure 1: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills.</figcaption>
 </figure>
 
-One may choose uniform distribution as it seems to be a fix to the asymmetry of the power law, making up for **the long-tail effect**. Moreover, a uniform test distribution seems to encourage us to use a matching training distribution. But, in the experiments we find that when the numbers in the problems are sampled from a power law distribution, the model learns much faster than the uniform one!
+One may choose uniform distribution as it seems to be a fix to the asymmetry of the power law, making up for **the long-tail effect**. But, when the numbers in the problems are sampled from a power law distribution, the model learns much faster than the uniform one!
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <a href="/images/blog/power-law/main-figure-bottom.pdf">
@@ -47,13 +47,23 @@ One may choose uniform distribution as it seems to be a fix to the asymmetry of 
   <figcaption>Figure 2: In compositional tasks, the long-tail intuition flips. Even when evaluation is uniform, power-law training learns faster than uniform training on multi-step arithmetic and state tracking.</figcaption>
 </figure>
 
-We further conducted experiments on several multi-step reasoning tasks, such as famous *state tracking*, synthetic natural language multi-hop QA and synthetic grade school math (GSM) problems. To our surprise, *Power law consistently wins!*
+We then checked whether the pattern survives beyond the first arithmetic example:
 
-Why does power law help reason so much? In this post, we will first *rethink the intuition* behind the data distribution choices depending on the task category, and then **build a theoretical framework** to explain this counterintuitive phenomenon. Finally, we will show *mechanistic evidence* supporting our theoretical prediction in various settings.
+- **State tracking**, where the model composes a sequence of group actions.
+- **Multi-hop QA**, where the model follows chains of synthetic natural language facts.
+- **Synthetic GSM-style math**, where answers depend on a graph of arithmetic operations (written in natural language).
+
+The same surprise keeps showing up: *power law consistently wins.*
+
+So why does power law help reasoning so much? The post will explain the interesting phenomenon in three steps:
+
+1. **Rethink the intuition.** Uniform distribution is the right instinct for one-hop memorization, but composition changes the bottleneck.
+2. **Build a toy theory.** A minimalist composition model shows how uniform distribution can create a symmetric, nearly flat initial landscape, while power law creates a useful descent direction.
+3. **Check the mechanism.** Transformer experiments show the same stage-wise picture: escape first, learn head skills next, and use them as stepping stones for scarce tail skills.
 
 ## Why power law v.s. uniform? Why does uniform feel right?
 
-First, why we consider *power law distribution* as the competitor of uniform? The motivation is straightforward: power laws are one of the most natural shapes in language. At the word level, Zipf's law says that a few words appear constantly while most words are rare. More generally, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$. This viewpoint can also explain why loss may decrease smoothly as a power law: many discrete skill-learning events get averaged together as the model reaches farther into the tail ([Michaud et al.](https://arxiv.org/abs/2303.13506)).
+First, why do we consider *power law distribution* as the competitor of uniform? The motivation is straightforward: power laws are one of the most natural shapes in language. At the word level, Zipf's law says that a few words appear constantly while most words are rare. More generally, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$. This viewpoint can also explain why loss may decrease smoothly as a power law: many discrete skill-learning events get averaged together as the model reaches farther into the tail ([Michaud et al.](https://arxiv.org/abs/2303.13506)).
 
 <details class="powerlaw-details" markdown="1">
 <summary>Background: quanta and power-law skill frequencies</summary>
@@ -127,7 +137,7 @@ Now we change only the task to a more reasoning-like, <strong>multi-hop QA</stro
 
 When memorizing atomic facts, each relation can be learned almost <strong>independently</strong>. In contrast, in a two-hop QA problem, the model has to retrieve the first fact, use its answer as the input to the second fact, and only then produce the final answer.
 
-Intuitively, if a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k$, the full combination is much rarer than any one skill alone. From a pure coverage view, power-law distribution should look especially bad here: it undersamples scarce long-tail skills, and rare chains involve rare pieces. The naive prediction makes the uniform distribution even more tempting. Surprisingly, the experiment goes the other way instead: power-law distribution exhibits a clear gain in training speed.
+Intuitively, if a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k$, the full combination is much rarer than any one skill alone. From a pure coverage view, power-law distribution should look especially bad here: it undersamples scarce long-tail skills, and rare chains involve rare pieces. The naive prediction makes the uniform distribution even more tempting. Surprisingly, the experiment goes the other way instead: power-law distribution exhibits a clear gain in training speed. We evaluate on a uniform test distribution, so the gain is not coming from matching the test distribution.
 
 <figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/multi-hop-qa-accuracy.png" alt="Power-law distribution learns the multi-hop QA task earlier than uniform distribution">
