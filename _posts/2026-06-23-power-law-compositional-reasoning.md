@@ -27,26 +27,38 @@ related: false
 
 ## How to make LLM learn to reason efficiently?
 
-Suppose you are asked to train an LLM to solve reasoning tasks (e.g. grade school math problems) with as few tokens as possible. How will you design your training distribution?
+Suppose you are asked to train an LLM to solve multi-step arithmetic (e.g. $a+b\times c -d\div e=?$) with as few training steps as possible. How should you design your training distribution, given a uniform test distribution?
 
-Let's say you are only allowed to change the distribution of the **numbers**, which is the most basic "knowledge" of the arithmetic. One option is the standard uniform distribution, sampling every number with roughly equal probability. Another option is an asymmetric power-law distribution. Then which one will you choose?
+Let's say you are only allowed to change the training distribution of the **numbers**, which is the most basic "knowledge" of the arithmetic. One option is the standard uniform distribution, sampling every number with roughly equal probability. Another option is an asymmetric power-law distribution. Then which one will you choose?
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <a href="/images/blog/power-law/distribution-comparison.pdf">
     <img src="/images/blog/power-law/distribution-comparison.png" alt="Uniform and power-law skill distributions">
   </a>
-  <figcaption>Figure 1: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills. </figcaption>
+  <figcaption>Figure 1: Uniform distribution assigns nearly equal probability mass to each skill. Power-law distribution keeps high-frequency skills and scarce long-tail skills.</figcaption>
 </figure>
 
+One may choose uniform distribution as it seems to be a fix to the asymmetry of the power law, making up for **the long-tail effect**. Moreover, a uniform test distribution seems to encourage us to use a matching training distribution. But, in the experiments we find that when the numbers in the problems are sampled from a power law distribution, the model learns much faster than the uniform one!
 
-## Motivation: Why Power Law v.s. Uniform?
+<figure class="powerlaw-figure powerlaw-figure--wide">
+  <a href="/images/blog/power-law/main-figure-bottom.pdf">
+    <img src="/images/blog/power-law/main-figure-bottom.png" alt="Power-law distribution trains faster than uniform distribution on multi-step arithmetic and state tracking">
+  </a>
+  <figcaption>Figure 2: In compositional tasks, the long-tail intuition flips. Even when evaluation is uniform, power-law training learns faster than uniform training on multi-step arithmetic and state tracking.</figcaption>
+</figure>
 
-The motivation is straightforward: power laws are one of the most natural shapes in language. At the word level, Zipf's law says that a few words appear constantly while most words are rare. More generally, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$. This viewpoint can also explain why loss may decrease smoothly as a power law: many discrete skill-learning events get averaged together as the model reaches farther into the tail ([Michaud et al.](https://arxiv.org/abs/2303.13506)).
+We further conducted experiments on several multi-step reasoning tasks, such as famous *state tracking*, synthetic natural language multi-hop QA and synthetic grade school math (GSM) problems. To our surprise, *Power law consistently wins!*
+
+Why does power law help reason so much? In this post, we will first *rethink the intuition* behind the data distribution choices depending on the task category, and then **build a theoretical framework** to explain this counterintuitive phenomenon. Finally, we will show *mechanistic evidence* supporting our theoretical prediction in various settings.
+
+## Why power law v.s. uniform? Why does uniform feel right?
+
+First, why we consider *power law distribution* as the competitor of uniform? The motivation is straightforward: power laws are one of the most natural shapes in language. At the word level, Zipf's law says that a few words appear constantly while most words are rare. More generally, the "items" may not be words at all: they may be latent skills or knowledge pieces whose occurrence frequencies follow a power-law distribution, $p_i\propto i^{-\alpha}$. This viewpoint can also explain why loss may decrease smoothly as a power law: many discrete skill-learning events get averaged together as the model reaches farther into the tail ([Michaud et al.](https://arxiv.org/abs/2303.13506)).
 
 <details class="powerlaw-details" markdown="1">
 <summary>Background: quanta and power-law skill frequencies</summary>
 
-One useful support to this concrete viewpoint is the quanta hypothesis from [Michaud et al.](https://arxiv.org/abs/2303.13506), later discussed in Michaud's [quanta essay](https://ericjmichaud.com/quanta/). Imagine pretraining as learning many discrete modules, or quanta. A quantum might retrieve a piece of knowledge, implement a small algorithm, or support a narrow capability. It matters only on the tokens where it improves prediction, so each quantum has a "use frequency." If these use frequencies are power-law distributed, then smooth neural scaling can arise from many discrete learning events being averaged together: as we scale data, parameters, or training time, the model reaches farther into the tail of useful quanta.
+One useful way to make this viewpoint concrete is the quanta hypothesis from [Michaud et al.](https://arxiv.org/abs/2303.13506), later discussed in Michaud's [quanta essay](https://ericjmichaud.com/quanta/). Imagine pretraining as learning many discrete modules, or quanta. A quantum might retrieve a piece of knowledge, implement a small algorithm, or support a narrow capability. It matters only on the tokens where it improves prediction, so each quantum has a "use frequency." If these use frequencies are power-law distributed, then smooth neural scaling can arise from many discrete learning events being averaged together: as we scale data, parameters, or training time, the model reaches farther into the tail of useful quanta.
 
 <blockquote class="powerlaw-pullquote">
   <p>The "use frequencies" of the quanta naturally follow a power law.</p>
@@ -64,14 +76,12 @@ One useful support to this concrete viewpoint is the quanta hypothesis from [Mic
       <img src="https://ericjmichaud.com/quanta/assets/quanta-sequence.png" alt="Eric Michaud's quanta sequence power-law schematic">
     </a>
   </div>
-  <figcaption>Figure 2: Individual skills can appear as sharp learning transitions but forming a smooth pre-training loss curve together. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
+  <figcaption>Figure 3: Individual skills can appear as sharp learning transitions, but together they form a smooth pre-training loss curve. Source: Eric J. Michaud, <a href="https://ericjmichaud.com/quanta/">On neural scaling and the quanta hypothesis</a>.</figcaption>
 </figure>
 
 But this picture of power law also exposes a problem: **the long tail effect**. Under a power-law distribution, rare skills are observed only when the dataset becomes very large, while the most frequent skills may be sampled far beyond what is necessary for learning them.
 
-If the goal is to learn atomic knowledge or individual skills faster, the obvious data-curation move is to flatten the distribution: up-weight low-frequency skills, down-weight high-frequency ones, and move closer to a uniform distribution over skills. Given enough knowledge about the data and enough budget for curation, this sounds like the ideal long-tail fix.
-
-That is the intuition we start from. If a power-law distribution creates a long-tail problem, shouldn't a more uniform distribution help?
+If the goal is to learn atomic knowledge or individual skills faster, the obvious data-curation move is to flatten the distribution: up-weight low-frequency skills, down-weight high-frequency ones, and move closer to a uniform distribution over skills. Given enough knowledge about the data and enough budget for curation, this sounds like the ideal long-tail fix. In this case, shouldn't a more uniform distribution help?
 
 ## Sanity check: one-hop memorization
 
@@ -92,7 +102,7 @@ The experiment behaves exactly this way. We randomly rank relations, train one m
 
 <figure class="powerlaw-figure">
   <img src="/images/blog/power-law/single-hop-memorization.png" alt="Uniform distribution learns a one-hop memorization task faster than power-law distribution">
-  <figcaption>Figure 3: For one-hop memorization, the usual long-tail intuition is correct. Uniform distribution gives rare relations more exposure and reaches high exact match faster.</figcaption>
+  <figcaption>Figure 4: For one-hop memorization, the usual long-tail intuition is correct. Uniform distribution gives rare relations more exposure and reaches high exact match faster.</figcaption>
 </figure>
 
 Overall, if the task were only to store isolated facts, "use a power-law distribution" would be a strange recommendation. High-frequency skills are already frequent; scarce long-tail skills need data. Shifting towards a uniform distribution gives every skill a fairer chance.
@@ -121,7 +131,7 @@ Intuitively, if a chain uses $k$ skills with frequencies roughly $p_1,\ldots,p_k
 
 <figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/multi-hop-qa-accuracy.png" alt="Power-law distribution learns the multi-hop QA task earlier than uniform distribution">
-  <figcaption>Figure 4: The one-hop result says uniform distribution helps coverage. The multi-hop result says coverage is not enough for compositional reasoning tasks.</figcaption>
+  <figcaption>Figure 5: The one-hop result says uniform distribution helps coverage. The multi-hop result says coverage is not enough for compositional reasoning tasks.</figcaption>
 </figure>
 
 This raises the main question: **what changes when a model has to compose skills rather than recall them one at a time? Why does a power-law distribution help language models learn reasoning?**
@@ -211,7 +221,9 @@ The results thus indicate that the more complex the task is (with an increasing 
 <p class="powerlaw-punchline"><strong>Punchline.</strong> Uniform distribution fixes long-tail exposure, but for composition it can also create a symmetric hard instance: the initial alignment is tiny, the useful gradient is tiny, and gradient descent sees an almost flat landscape.</p>
 
 <p class="powerlaw-remark"><strong>Remark.</strong>
-The rigorous theoretical result uses another tool called correlational statistical query (CSQ) lower bound. Under a uniform input distribution, learning the compositional task requires either very accurate gradient queries or a large amount of data/compute. <details class="powerlaw-details" markdown="1">
+The rigorous theoretical result uses another tool called correlational statistical query (CSQ) lower bound. Under a uniform input distribution, learning the compositional task requires either very accurate gradient queries or a large amount of data/compute.</p>
+
+<details class="powerlaw-details" markdown="1">
 <summary>CSQ lower bound and proof sketch</summary>
 
 **Theorem.** Let the input distribution be uniform, $p_j=1/d$, and let $k\ge 2$. There exists a function class $\mathcal F_k$ and a constant $\epsilon=\Omega(1)$ such that any correlational statistical query learner using $q$ queries requires tolerance
@@ -231,7 +243,7 @@ $$
 $$
 
 Next, choose a large subset of hypercube vectors whose pairwise normalized inner products are small. A standard Hoeffding plus union-bound argument gives a subset of size about $\exp(\Omega(\varepsilon^2d))$ with $\left|w_1^\top w_2/d\right|\le \varepsilon$ for every distinct pair. Therefore the corresponding functions are nearly uncorrelated, and a correlational query reveals very little about which target in the class is the true one. Plugging this packing into the standard CSQ lower-bound argument yields the tolerance bound above.
-</details></p>
+</details>
 
 ## Power-law distribution re-enables efficient training
 
@@ -313,21 +325,21 @@ This task is known to be hard under uniform training distribution without interm
     <img src="/images/blog/power-law/power-law-composition.png" alt="State tracking accuracy under uniform distribution and power-law distribution">
     <img src="/images/blog/power-law/state-tracking-power-law.png" alt="Illustration of state tracking as multi-hop composition">
   </div>
-  <figcaption>Figure 5: State tracking is the controlled transformer version of the theory. Uniform distribution cannot learn the implicit composition task, while power-law distribution makes the same task learnable without curriculum or chain-of-thought.</figcaption>
+  <figcaption>Figure 6: State tracking is the controlled transformer version of the theory. Uniform distribution cannot learn the implicit composition task, while power-law distribution makes the same task learnable without curriculum or chain-of-thought.</figcaption>
 </figure>
 
 **Stage I: power law enables escaping from the flat region.** To visualize the landscape, take the training trajectories of the $S_5$ state tracking task under both uniform and power-law distributions. Compute the top two PCA directions from consecutive checkpoint differences and plot the loss landscape together with the trajectory. The initial region under uniform distribution is much flatter; the power-law distribution creates a clearer descent direction to the lower-loss region.
 
 <figure class="powerlaw-figure powerlaw-figure--compact">
   <img src="/images/blog/power-law/loss-landscape.png" alt="Uniform distribution and power-law distribution state-tracking loss landscapes">
-  <figcaption>Figure 6: Power-law distribution induces a much better initial loss landscape. Uniform training is flatter near initialization and harder to optimize by gradient methods.</figcaption>
+  <figcaption>Figure 7: Power-law distribution induces a much better initial loss landscape. Uniform training is flatter near initialization and harder to optimize by gradient methods.</figcaption>
 </figure>
 
-**Stage II and III: head-to-tail learning, then long-tail convergence.** Figure 7 checks the remaining stages above. The permutations are separated by rank into bins. Once the head bin starts to learn, the expected gradient norm on samples requiring a tail permutation becomes much larger when the other input permutations come from the learned head bin. This is the empirical counterpart of increasing $A(t)$ in Stage II. Later, the tail bins still converge more slowly, matching the Stage III long-tail bottleneck.
+**Stage II and III: head-to-tail learning, then long-tail convergence.** Figure 8 checks the remaining stages above. The permutations are separated by rank into bins. Once the head bin starts to learn, the expected gradient norm on samples requiring a tail permutation becomes much larger when the other input permutations come from the learned head bin. This is the empirical counterpart of increasing $A(t)$ in Stage II. Later, the tail bins still converge more slowly, matching the Stage III long-tail bottleneck.
 
 <figure class="powerlaw-figure powerlaw-figure--wide">
   <img src="/images/blog/power-law/state-tracking-stages.png" alt="State tracking stage-wise learning mechanism under power-law distribution">
-  <figcaption>Figure 7: The transformer dynamics show the same stage-wise mechanism as the minimalist model. Head skills are learned first, then increase the gradient signal for scarce long-tail skills.</figcaption>
+  <figcaption>Figure 8: The transformer dynamics show the same stage-wise mechanism as the minimalist model. Head skills are learned first, then increase the gradient signal for scarce long-tail skills.</figcaption>
 </figure>
 
 So the state-tracking experiment mirrors the theory: power-law distribution first improves the initial landscape, then creates an implicit curriculum through high-frequency skills, and finally faces the ordinary long-tail drawback.
@@ -377,7 +389,7 @@ Across these tasks, the pattern is consistent with the theory. Power-law trainin
     <img src="/images/blog/power-law/multi-hop-qa-mechanism.png" alt="Multi-hop QA stage-wise learning mechanism and loss landscapes">
     <img src="/images/blog/power-law/gsm-modular.png" alt="Power-law distribution is much faster on modular GSM-style arithmetic">
   </div>
-  <figcaption>Figure 8: The same mechanism appears beyond state tracking. Multi-hop QA shows stage-wise learning and a steeper power-law loss landscape; synthetic GSM-style arithmetic shows that the advantage is not limited to relation chaining.</figcaption>
+  <figcaption>Figure 9: The same mechanism appears beyond state tracking. Multi-hop QA shows stage-wise learning and a steeper power-law loss landscape; synthetic GSM-style arithmetic shows that the advantage is not limited to relation chaining.</figcaption>
 </figure>
 
 ## What this suggests in practice
