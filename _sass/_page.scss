@@ -726,11 +726,21 @@
     }
 
     h2 {
-      margin-top: 2.5em;
+      margin-top: 3.25em;
+      padding-top: 1.15em;
+      border-top: 1px solid rgba(23, 63, 62, 0.18);
+      line-height: 1.2;
     }
 
     h3 {
-      margin-top: 1.9em;
+      margin-top: 2.15em;
+      line-height: 1.3;
+    }
+
+    p > strong:only-child {
+      color: #173f3e;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.02em;
     }
 
     blockquote {
@@ -753,7 +763,7 @@
   .discoloop-caption {
     margin: 0.55em 0 2.1em;
     color: #647b79;
-    font-size: 0.82em;
+    font-size: 0.8em;
     line-height: 1.55;
   }
 
@@ -781,8 +791,8 @@
     figcaption {
       margin-top: 0.75em;
       color: #647b79;
-      font-size: 0.78em;
-      line-height: 1.5;
+      font-size: 0.8em;
+      line-height: 1.55;
       text-align: left;
     }
   }
@@ -794,7 +804,8 @@
   @include breakpoint(max-width $small) {
     .page__content {
       h2 {
-        margin-top: 2.1em;
+        margin-top: 2.6em;
+        padding-top: 0.95em;
       }
     }
 
