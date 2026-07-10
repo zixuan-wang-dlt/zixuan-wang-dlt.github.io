@@ -32,32 +32,32 @@ Suppose a model has learned the following two sentences in two different documen
 
 Now ask: **Where does Alice's spouse work?**
 
-The model has seen every fact it needs. The answer is not hidden in a database it cannot access, and no new world knowledge is required. It only needs to retrieve Bob, treat Bob as the input to the second fact, and return San Francisco.
+The model has already seen every fact it needs. No new world knowledge is required. It only has to retrieve Bob, use Bob to find the relevant second fact, and return San Francisco.
 
-This looks almost too easy to call reasoning. Yet it captures a basic operation that appears everywhere: use one piece of knowledge to decide which other piece of knowledge becomes relevant. In other words, reasoning is often not the acquisition of new facts, but the **manipulation and composition of facts already stored in memory**.
+This looks almost too easy to call reasoning. But it captures a basic operation that appears everywhere: one piece of knowledge tells us which other piece to use next. In this view, reasoning is often not about acquiring new facts, but about **manipulating and composing facts already stored in memory**.
 
 This is close to the knowledge-manipulation viewpoint developed in [Physics of Language Models](https://arxiv.org/abs/2309.14402): extracting a memorized fact and manipulating several memorized facts are different capabilities, and success on the first does not imply success on the second.
 
 <discoloop-fact-composition></discoloop-fact-composition>
 <p class="discoloop-caption">The bridge entity, Bob, is never part of the visible answer. It has to exist only long enough inside the model to make the second retrieval possible.</p>
 
-This post follows that failure from a standard Transformer to a looped one. The standard model cannot reliably reuse parametric knowledge across depth. Weight tying fixes much of that problem, but not all of it: the intermediate answer may be decodable without being represented in a form that the next loop can reliably use.
+The rest of the post is about what goes wrong inside the model. A standard Transformer cannot reliably reuse parametric knowledge across depth. Weight tying fixes much of this problem, but leaves another one behind: an intermediate answer can be easy to decode and still be in the wrong form for the next reasoning step.
 
-That distinction leads to [DiscoLoop](https://arxiv.org/abs/2607.00341), a looping architecture that carries both continuous hidden states and decoded discrete embeddings across recurrent computation.
+This is the motivation for [DiscoLoop](https://arxiv.org/abs/2607.00341), a looping architecture that carries continuous hidden states and decoded discrete embeddings together through recurrent computation.
 
 ## I. Reasoning as knowledge manipulation
 
 ### Why care about implicit reasoning during pretraining?
 
-Reasoning is often discussed through chain-of-thought (CoT): let the model generate intermediate steps, put those steps back into the context, and continue from there. This is an effective way to spend more computation at inference time. The generated tokens also act as an external scratchpad. Once the model writes down “Bob,” the next step receives a clean token embedding for Bob in its input.
+Reasoning is often discussed through chain-of-thought (CoT): the model writes an intermediate step, reads it back from the context, and continues. Besides giving the model more inference-time computation, these tokens act as an external scratchpad. Once the model writes down “Bob,” the next step receives a clean token embedding for Bob.
 
-But not every setting comes with a reasoning trace. During pretraining, a model mostly sees ordinary text and receives next-token supervision. A sentence can state a conclusion without spelling out all the latent deductions that made it true. Even when a trace could in principle be generated, repeatedly verbalizing every intermediate fact consumes context and changes the interface of the model.
+But pretraining rarely comes with such a trace. A model mostly sees ordinary text and receives next-token supervision; a sentence may state a conclusion without spelling out the latent deductions behind it. Requiring every intermediate fact to be verbalized would also consume context and change how the model is used.
 
-For pretraining, this leaves us with a stricter question:
+So for pretraining, the question is stricter:
 
 > Can a model compose knowledge stored in its parameters, within a single answer-producing forward computation, without first writing the bridge entity into the visible context?
 
-We call this **implicit in-weight reasoning**. “In-weight” means that the atomic facts are stored in the parameters rather than supplied in the prompt. “Implicit” means that the model directly predicts the final answer rather than emitting the bridge entity as an intermediate target.
+We call this **implicit in-weight reasoning**. The atomic facts live in the parameters rather than in the prompt, and the model predicts the final answer without emitting the bridge entity as an intermediate target.
 
 The two-hop example is the smallest nontrivial version. Let the atomic facts be
 
@@ -67,33 +67,33 @@ $$
 
 where $b$ is the bridge entity. The model receives $(a,r_1,r_2)$ and must predict $c$. It is trained on the two atomic facts separately, but the exact composition from $a$ to $c$ may never appear in training.
 
-This setup distinguishes knowing from using. If the model fails because it never learned one of the atomic edges, the problem is memory. If it knows both edges but still cannot answer the composed query, the problem is reasoning over memory.
+This lets us separate knowing from using. Missing an atomic edge is a memory failure. Knowing both edges but failing on their composition is a failure to reason over that memory.
 
 ### Can the model generalize the composition rule?
 
-To separate memorization from systematic composition, it helps to use two entity-disjoint knowledge graphs, $\mathcal G_A$ and $\mathcal G_B$, with the same relation vocabulary.
+To test this separation, we use two entity-disjoint knowledge graphs, $\mathcal G_A$ and $\mathcal G_B$, with the same relation vocabulary.
 
 - For $\mathcal G_A$, training contains all atomic facts and some two-hop questions. Held-out two-hop questions form the **ID test set**.
 - For $\mathcal G_B$, training contains all atomic facts but no two-hop questions. Every two-hop question forms the **OOD test set**.
 
-The OOD split is deliberately unforgiving. The model has seen every edge in $\mathcal G_B$, so failure cannot be blamed on missing factual knowledge. But it has never been rewarded for composing facts involving those entities. Success therefore requires transferring a learned rule of composition to a new set of entities.
+The OOD split is deliberately unforgiving. The model has seen every edge in $\mathcal G_B$, so missing factual knowledge cannot explain a failure. What it has never seen is those entities being used in a two-hop question. To succeed, it must transfer the composition rule itself.
 
 Can an ordinary Transformer do this?
 
 ## II. Why vanilla Transformers fail to generalize
 
-A useful starting point is [Grokked Transformers are Implicit Reasoners](https://arxiv.org/abs/2405.15071), which studied almost exactly this question in a controlled setting. The paper trained decoder-only Transformers on a mixture of atomic facts and inferred facts. The model quickly fit its training set. Generalization came much later, after extended optimization far beyond overfitting: the familiar grokking phenomenon.
+[Grokked Transformers are Implicit Reasoners](https://arxiv.org/abs/2405.15071) studied almost exactly this question in a controlled setting. Decoder-only Transformers were trained on a mixture of atomic and inferred facts. They fit the training set quickly, while generalization appeared much later, after a long period of continued optimization: the familiar grokking phenomenon.
 
 For two-hop composition, the eventual result was asymmetric:
 
 - ID accuracy could approach perfection after grokking.
 - OOD composition stayed at essentially zero, even after training was extended to one million optimization steps.
 
-So longer training did teach the model a more general circuit, but not a systematic one. It learned to compose familiar kinds of examples without learning a procedure that transferred to atomic facts seen only in isolation.
+Longer training therefore produced a more general circuit, but not a systematic one. The model learned to compose familiar examples without learning a procedure that transferred to facts seen only in isolation.
 
 ### What changes during grokking?
 
-The useful part is what happens inside the model. Using logit lens and causal tracing across checkpoints, the authors found two qualitatively different solutions.
+The interesting part is what changes inside the model. Logit-lens and causal-tracing analyses across checkpoints reveal two qualitatively different solutions.
 
 Early in training, the model relies on a **memorizing circuit**. It directly associates the visible query pattern with an answer. This circuit fits the observed inferred facts quickly, but it does not implement the two hops.
 
@@ -103,7 +103,7 @@ During grokking, a **generalizing circuit** gradually becomes stronger:
 2. The model delays the second relation until the bridge is ready.
 3. Upper layers combine the bridge with the second relation and retrieve the final answer.
 
-This is real implicit composition. The model is no longer merely memorizing each two-hop query. It has organized the computation into a first retrieval followed by a second retrieval.
+At this point the model is no longer memorizing each two-hop query. It has organized the computation into one retrieval followed by another: genuine implicit composition.
 
 Yet the location of the two retrievals matters.
 
@@ -122,7 +122,7 @@ This is a **depth-local storage problem**. The model's parametric memory is frag
 
 The comparison task in the Grokked Transformers paper provides a useful control. Comparison can be solved by retrieving two facts in parallel in the lower layers and comparing them later. Because both facts are accessed from the same region of the network, the circuit generalizes systematically to OOD entities. The failure is therefore not a blanket inability to reason. It is tied to the sequential structure of composition and to where parametric knowledge is available.
 
-The diagnosis points to a natural architectural fix: **reuse the same weights across reasoning steps**.
+This suggests a natural architectural fix: **reuse the same weights across reasoning steps**.
 
 ## III. Looping shares memory, but not representation
 
@@ -139,7 +139,7 @@ For a two-hop problem, we can use two loops. The first pass retrieves $b$ from $
 
 The key difference is memory sharing. The same parameters that know how to answer an atomic query in the first loop are available again in the second loop. There is no separate upper-layer memory that must independently relearn every possible second-hop fact.
 
-This is exactly what the Grokked Transformers diagnosis asks for. Weight tying turns depth-local modules into a reusable computational step. In principle, any fact recallable in loop one should also be recallable in loop two.
+Weight tying turns depth-local modules into a reusable computational step. In principle, any fact that can be recalled in loop one should remain recallable in loop two.
 
 ### Looping helps, but the OOD gap remains
 
@@ -147,15 +147,15 @@ In our symbolic two-graph experiment, looping does unlock behavior that the non-
 
 But its OOD accuracy is only $8.3\%$.
 
-That is better than zero, and it supports the memory-sharing story. It is also far from the systematic generalization we hoped recurrence would provide.
+The improvement supports the memory-sharing story, but it is far from the systematic generalization we hoped recurrence would provide.
 
 What is still going wrong?
 
 ### The bridge is present, but not usable
 
-The first possibility is that the looped model still fails to recover the bridge. We can test this directly by reading the LM head from the hidden state after the first loop.
+Perhaps the first loop still fails to recover the bridge. We can check directly by applying the LM head to its hidden state.
 
-The result is surprisingly clean. On both ID and OOD examples, the correct bridge receives probability essentially $1.000$ at the expected position. The first loop has found Bob.
+The result is surprisingly clean: on both ID and OOD examples, the correct bridge receives probability essentially $1.000$ at the expected position. The first loop has found Bob.
 
 This rules out the original depth-local storage explanation as the remaining bottleneck. The shared block can recover the bridge, and the same shared block contains all atomic facts needed for the second hop.
 
@@ -168,7 +168,7 @@ The state is decodable as Bob, but it is not shaped like the representation the 
 <discoloop-loop-handoff></discoloop-loop-handoff>
 <p class="discoloop-caption">Loop one speaks in continuous residual states. Loop two was originally trained to consume clean token embeddings. The predicted identity is correct, but the handoff distribution is different.</p>
 
-This distinction is easy to miss. A linear readout can assign Bob the largest logit even when the hidden vector also contains many other directions. Those extra directions may be harmless for decoding but harmful for the next computation. The second loop does not only need to *recognize* Bob. It needs a representation that triggers the same atomic retrieval behavior as the clean embedding of Bob.
+This distinction is easy to miss. A linear readout can assign Bob the largest logit even when the hidden vector contains many other directions. They may be harmless for decoding but harmful to the next computation. The second loop does not only need to *recognize* Bob; it needs a representation that triggers the same retrieval behavior as Bob's clean embedding.
 
 ### A training-free test of the hypothesis
 
@@ -189,7 +189,7 @@ At $\alpha=0.1$, OOD accuracy rises from $8.3\%$ to $25.9\%$. Around $\alpha=0.5
 <discoloop-alignment></discoloop-alignment>
 <p class="discoloop-caption">Move the slider to mix the decoded bridge embedding into the continuous state. A moderate intervention nearly closes the generalization gap.</p>
 
-This experiment is hard to explain away as more capacity or more training. We do not add layers, reveal the ground-truth bridge, retrain the network, or change the second-hop memory. We only move the intermediate state toward the embedding of the token the model has already decoded.
+Nothing else changes in this experiment. We do not add layers, reveal the ground-truth bridge, retrain the network, or alter the second-hop memory. We only move the intermediate state toward the embedding of the token the model has already decoded.
 
 Looping solves the order and memory-sharing problem. The intervention exposes a second bottleneck: **representation alignment across loops**.
 
@@ -197,7 +197,7 @@ Looping solves the order and memory-sharing problem. The intervention exposes a 
 
 ### A discrete channel alongside the continuous one
 
-The intervention uses a hard $\arg\max$ at one known bridge position. A general architecture should be differentiable, should not assume which position contains the useful intermediate result, and should work at every loop.
+The intervention above uses a hard $\arg\max$ at a known bridge position. A useful architecture cannot assume where the intermediate result will appear, and the whole operation must remain differentiable at every loop.
 
 DiscoLoop does this by maintaining two recurrent channels:
 
@@ -212,7 +212,7 @@ $$
 p_v(h)=\frac{\exp((\mathbf W h)_v/\tau)}{\sum_{v'}\exp((\mathbf W h)_{v'}/\tau)}.
 $$
 
-Rather than selecting one token, $\Phi(h)$ takes a probability-weighted average of token embeddings. It is the differentiable version of “decode the intermediate answer, then feed its embedding back in.”
+Rather than selecting one token, $\Phi(h)$ takes a probability-weighted average of token embeddings: a differentiable version of “decode the intermediate answer, then feed its embedding back in.”
 
 The recurrent update becomes
 
@@ -232,19 +232,19 @@ The token-wise gate $\alpha^{(k)}$ controls how strongly the discrete signal is 
 <discoloop-architecture></discoloop-architecture>
 <p class="discoloop-caption">The continuous channel keeps context and superposed information. The discrete channel supplies a cleaner identity-like direction for the next loop.</p>
 
-Why keep both channels? An embedding-only recurrence throws away information that may not be captured by the token distribution. A hidden-state-only recurrence keeps that information but also keeps the representation mismatch. DiscoLoop treats the decoded embedding as an additional signal rather than a replacement for the continuous state.
+Both channels are needed. An embedding-only recurrence throws away information that the token distribution does not capture. A hidden-state-only recurrence preserves that information, but also preserves the representation mismatch. DiscoLoop adds the decoded embedding as a signal instead of replacing the continuous state with it.
 
 The intermediate token is still not added to the visible context and is never supervised as a chain-of-thought target. The final answer remains the only target. DiscoLoop therefore provides a CoT-like computational handoff while keeping the reasoning latent.
 
 ### What changes during training?
 
-The symbolic experiment shows more than a final accuracy difference. It shows a change in how the model uses its loops.
+The symbolic experiment also reveals a change in how the model uses its loops.
 
 Early in training, Stage-1 two-hop training accuracy quickly rises toward $100\%$. In other words, one application of the shared block memorizes the observed two-hop answers directly. At this point, ID and OOD test accuracy remain near zero.
 
 Later, a phase transition occurs. Stage-1 training accuracy collapses while final two-loop test accuracy rises. The model is giving up the one-loop shortcut and moving the composition into the recurrence: first retrieve the bridge, then use it in the next loop.
 
-DiscoLoop makes this transition earlier and sharper than a vanilla looped Transformer. The discrete channel does not merely repair a representation at inference time. It strengthens the architectural bias toward using loops as compositional steps.
+DiscoLoop makes this transition earlier and sharper than a vanilla looped Transformer. The discrete channel is therefore doing more than repairing a representation at inference time: it encourages the model to use its loops as compositional steps.
 
 <figure class="discoloop-figure discoloop-figure--wide">
   <img src="/images/blog/discoloop/symbolic-results.png" alt="Symbolic two-hop accuracy and Stage-1 training accuracy for DiscoLoop, vanilla loop, and non-looped Transformers">
@@ -273,7 +273,7 @@ Each additional hop creates another representation handoff. If the handoff is sl
 
 ### Does this matter for ordinary pretraining?
 
-Controlled graph tasks make the mechanism visible, but they leave open the practical question: does the mixed recurrent channel help a language model trained on real text?
+Controlled graph tasks make the mechanism visible. The remaining question is whether the same recurrent channel helps a language model trained on real text.
 
 We pretrain three $440$M-parameter models for $20$B tokens on a $6{:}4$ mixture of FineWeb-Edu and FineMath. All models use the same looped backbone, tokenizer, optimizer, data mixture, and four total backbone applications. They differ only in how information is carried between applications:
 
@@ -281,7 +281,7 @@ We pretrain three $440$M-parameter models for $20$B tokens on a $6{:}4$ mixture 
 - PonderLM carries recurrence through embedding space.
 - DiscoLoop carries the continuous state plus the decoded embedding channel.
 
-The differences are modest compared with the synthetic tasks, but consistent. DiscoLoop obtains the best average zero-shot score: $50.5$, compared with $49.3$ for vanilla loop and $49.8$ for PonderLM. It is best or tied on six of seven reported benchmarks.
+The differences are smaller than on the synthetic tasks, but consistent. DiscoLoop obtains the best average zero-shot score: $50.5$, compared with $49.3$ for vanilla loop and $49.8$ for PonderLM. It is best or tied on six of the seven reported benchmarks.
 
 The training loss tells an interesting story. Vanilla loop is better early. DiscoLoop overtakes it after roughly $13$B tokens and maintains the advantage through the end of training.
 
@@ -292,29 +292,23 @@ The training loss tells an interesting story. Vanilla loop is better early. Disc
 
 For the large vocabulary used in pretraining, the full sum in $\Phi$ would be expensive. We therefore keep only the top $128$ token probabilities before forming the weighted embedding average. This retains essentially all nontrivial probability mass in our runs while reducing compute and memory overhead.
 
-These experiments do not prove that every pretrained language model should be recurrent. They do suggest that the representation problem diagnosed on a tiny graph task survives at a scale where the model is learning ordinary language and mathematical text.
+This does not mean that every pretrained language model should be recurrent. It does suggest that the representation problem found on a tiny graph task survives when the model is trained on ordinary language and mathematical text.
 
 ### What does this tell us about implicit reasoning?
 
-The path from the vanilla Transformer to DiscoLoop separates three questions that are easy to collapse into one.
+The path from the vanilla Transformer to DiscoLoop separates three issues that are easy to conflate.
 
-**Does the model know the facts?**
+First, **knowing the facts is not enough**. Atomic accuracy can be perfect while compositional accuracy remains poor.
 
-Atomic accuracy can be perfect while compositional accuracy is poor. Knowledge storage is necessary but not sufficient.
+Second, **the facts must be available at the right computational step**. A standard Transformer may store facts useful for different hops at different depths. This is enough for ID composition, but it prevents systematic OOD transfer. Weight tying instead gives every loop access to the same parametric memory.
 
-**Is the knowledge available at the right computational step?**
+Finally, **the intermediate state must be reusable**. A hidden state can linearly decode to the correct bridge while remaining geometrically far from its clean embedding. The next loop needs more than the right label under a probe; it needs a state that drives the right downstream computation.
 
-In a standard Transformer, facts useful for different hops may be stored at different depths. This enables ID composition but prevents systematic OOD transfer. Weight tying gives every loop access to the same parametric memory.
-
-**Is the intermediate state represented in a reusable form?**
-
-A hidden state can linearly decode to the correct bridge while remaining geometrically far from its clean embedding. The next loop needs more than the right label under a probe; it needs a state that drives the right downstream computation.
-
-This last point is broader than multi-hop QA. Neural networks often contain information that a probe can recover but the model itself does not use. Decodability is evidence that information exists somewhere in the representation. It is not evidence that the representation is in the right format for the next algorithmic step.
+The last point goes beyond multi-hop QA. Neural networks often contain information that a probe can recover but the model itself does not use. Decodability tells us that the information exists somewhere in the representation, not that it is in the right form for the next step of the computation.
 
 ### What remains open?
 
-The current evidence has clear boundaries.
+There are several limits to the current evidence.
 
 First, the cleanest mechanistic results come from controlled symbolic and synthetic-language tasks. The pretraining experiment is encouraging, but $440$M parameters and $20$B tokens are still moderate by modern standards.
 
@@ -328,13 +322,13 @@ Finally, DiscoLoop improves the handoff between latent steps; it does not by its
 
 The original puzzle was simple: why can a model know “Alice's spouse is Bob” and “Bob works in San Francisco,” yet fail to answer where Alice's spouse works?
 
-The answer is not one failure but two.
+There are two separate failures.
 
 A standard Transformer can store the two hops in different depth-local memories, so OOD facts are unavailable where the second hop occurs. Looping reuses the same memory and largely resolves this problem. But the first loop then passes a continuous hidden state to the second loop. That state may say “Bob” to the LM head without behaving like Bob's embedding inside the next computation.
 
 DiscoLoop addresses both issues: recurrence makes atomic knowledge reusable across steps, and the discrete embedding channel makes intermediate identities easier to reuse across recurrent states.
 
-Reasoning over parametric knowledge is not only about storing the right facts or allocating more computation. The representation passed from one computational step to the next matters just as much.
+Reasoning over parametric knowledge is not only about storing the right facts or adding more computation. It also depends on what one computational step actually hands to the next.
 
 ## References
 

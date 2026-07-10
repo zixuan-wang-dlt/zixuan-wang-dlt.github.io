@@ -719,21 +719,43 @@
    ========================================================================== */
 
 .discoloop-post {
+  .page__inner-wrap {
+    max-width: 880px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .page__content {
-    p,
-    li {
-      line-height: 1.72;
+    font-size: 1.03em;
+    line-height: 1.74;
+
+    > p:not(.discoloop-links):not(.discoloop-caption) {
+      margin: 0 0 1.12em;
     }
 
     h2 {
-      margin-top: 3.25em;
-      padding-top: 1.15em;
-      border-top: 1px solid rgba(23, 63, 62, 0.18);
-      line-height: 1.2;
+      margin-top: 2.75em;
+      margin-bottom: 0.85em;
+      padding-top: 1em;
+      padding-bottom: 0.24em;
+      border-top: 2px solid rgba(23, 63, 62, 0.24);
+      border-bottom: 1px solid rgba(23, 63, 62, 0.14);
+      color: #173f3e;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.78em;
+      font-weight: 700;
+      letter-spacing: 0;
+      line-height: 1.22;
     }
 
     h3 {
-      margin-top: 2.15em;
+      margin-top: 2.1em;
+      margin-bottom: 0.72em;
+      color: mix(#000, $text-color, 8%);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.28em;
+      font-weight: 700;
+      letter-spacing: 0;
       line-height: 1.3;
     }
 
@@ -744,20 +766,27 @@
     }
 
     blockquote {
-      margin: 1.8em 0;
-      padding: 0.2em 0 0.2em 1.25em;
-      border-left: 3px solid #168486;
-      color: #315a58;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 1.08em;
+      margin: 1.6em auto;
+      padding: 0.9em 1.2em;
+      border-left: 4px solid #168486;
+      background: rgba(22, 132, 134, 0.055);
+      color: mix(#000, $text-color, 12%);
+      font-family: inherit;
+      font-size: 0.98em;
       font-style: normal;
     }
   }
 
   .discoloop-links {
-    margin: -0.2em 0 2em;
-    color: #647b79;
-    font-size: 0.9em;
+    margin: 0 0 1.8em;
+    color: mix(#fff, $text-color, 28%);
+    font-family: $sans-serif;
+    font-size: 0.82em;
+    line-height: 1.45;
+
+    a {
+      font-weight: 600;
+    }
   }
 
   .discoloop-caption {
@@ -806,6 +835,12 @@
       h2 {
         margin-top: 2.6em;
         padding-top: 0.95em;
+        font-size: 1.5em;
+        line-height: 1.24;
+      }
+
+      h3 {
+        font-size: 1.18em;
       }
     }
 
