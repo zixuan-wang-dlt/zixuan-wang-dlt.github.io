@@ -713,3 +713,93 @@
   font-size: $type-size-6;
   text-transform: uppercase;
 }
+
+/*
+   DiscoLoop research post
+   ========================================================================== */
+
+.discoloop-post {
+  .page__content {
+    p,
+    li {
+      line-height: 1.72;
+    }
+
+    h2 {
+      margin-top: 2.5em;
+    }
+
+    h3 {
+      margin-top: 1.9em;
+    }
+
+    blockquote {
+      margin: 1.8em 0;
+      padding: 0.2em 0 0.2em 1.25em;
+      border-left: 3px solid #168486;
+      color: #315a58;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.08em;
+      font-style: normal;
+    }
+  }
+
+  .discoloop-links {
+    margin: -0.2em 0 2em;
+    color: #647b79;
+    font-size: 0.9em;
+  }
+
+  .discoloop-caption {
+    margin: 0.55em 0 2.1em;
+    color: #647b79;
+    font-size: 0.82em;
+    line-height: 1.55;
+  }
+
+  discoloop-fact-composition,
+  discoloop-depth-memory,
+  discoloop-loop-handoff,
+  discoloop-alignment,
+  discoloop-architecture {
+    display: block;
+    margin-top: 1.8em;
+  }
+
+  .discoloop-figure {
+    margin: 2.2em auto;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid rgba(23, 63, 62, 0.12);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    figcaption {
+      margin-top: 0.75em;
+      color: #647b79;
+      font-size: 0.78em;
+      line-height: 1.5;
+      text-align: left;
+    }
+  }
+
+  .discoloop-figure--wide {
+    width: min(100%, 980px);
+  }
+
+  @include breakpoint(max-width $small) {
+    .page__content {
+      h2 {
+        margin-top: 2.1em;
+      }
+    }
+
+    .discoloop-caption {
+      margin-bottom: 1.7em;
+    }
+  }
+}
