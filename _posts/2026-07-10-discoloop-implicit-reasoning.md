@@ -38,9 +38,6 @@ This looks almost too easy to call reasoning. But it captures a basic operation 
 
 This is close to the knowledge-manipulation viewpoint developed in [Physics of Language Models](https://arxiv.org/abs/2309.14402): extracting a memorized fact and manipulating several memorized facts are different capabilities, and success on the first does not imply success on the second.
 
-<discoloop-fact-composition></discoloop-fact-composition>
-<p class="discoloop-caption">The bridge entity, Bob, is never part of the visible answer. It has to exist only long enough inside the model to make the second retrieval possible.</p>
-
 The rest of the post is about what goes wrong inside the model. A standard Transformer cannot reliably reuse parametric knowledge across depth. Weight tying fixes much of this problem, but leaves another one behind: an intermediate answer can be easy to decode and still be in the wrong form for the next reasoning step.
 
 This is the motivation for [DiscoLoop](https://arxiv.org/abs/2607.00341), a looping architecture that carries continuous hidden states and decoded discrete embeddings together through recurrent computation.
@@ -115,9 +112,6 @@ During training, atomic facts used as first hops are useful in lower layers. Fac
 
 The model has no reason to copy an OOD atomic fact into the upper layers if that fact never appears as a second hop during training. At test time, the first hop may correctly recover an OOD bridge entity, but the corresponding second-hop fact is not available where the second retrieval takes place.
 
-<discoloop-depth-memory></discoloop-depth-memory>
-<p class="discoloop-caption">The failure is not that the OOD fact was never learned. It was learned in the part of the network used for atomic recall, but not in the part used for second-hop retrieval.</p>
-
 This is a **depth-local storage problem**. The model's parametric memory is fragmented across layers, while sequential composition asks later computation to reuse knowledge that may have been stored earlier.
 
 The comparison task in the Grokked Transformers paper provides a useful control. Comparison can be solved by retrieving two facts in parallel in the lower layers and comparing them later. Because both facts are accessed from the same region of the network, the circuit generalizes systematically to OOD entities. The failure is therefore not a blanket inability to reason. It is tied to the sequential structure of composition and to where parametric knowledge is available.
@@ -165,9 +159,6 @@ For the bridge position, the cosine similarity between the post-first-loop state
 
 The state is decodable as Bob, but it is not shaped like the representation the model receives when Bob appears as an actual input token.
 
-<discoloop-loop-handoff></discoloop-loop-handoff>
-<p class="discoloop-caption">Loop one speaks in continuous residual states. Loop two was originally trained to consume clean token embeddings. The predicted identity is correct, but the handoff distribution is different.</p>
-
 This distinction is easy to miss. A linear readout can assign Bob the largest logit even when the hidden vector contains many other directions. They may be harmless for decoding but harmful to the next computation. The second loop does not only need to *recognize* Bob; it needs a representation that triggers the same retrieval behavior as Bob's clean embedding.
 
 ### A training-free test of the hypothesis
@@ -185,9 +176,6 @@ $$
 No weights are updated. The rest of the forward pass is unchanged.
 
 At $\alpha=0.1$, OOD accuracy rises from $8.3\%$ to $25.9\%$. Around $\alpha=0.5$, both ID and OOD accuracy approach $100\%$.
-
-<discoloop-alignment></discoloop-alignment>
-<p class="discoloop-caption">Move the slider to mix the decoded bridge embedding into the continuous state. A moderate intervention nearly closes the generalization gap.</p>
 
 Nothing else changes in this experiment. We do not add layers, reveal the ground-truth bridge, retrain the network, or alter the second-hop memory. We only move the intermediate state toward the embedding of the token the model has already decoded.
 
@@ -228,9 +216,6 @@ $$
 $$
 
 The token-wise gate $\alpha^{(k)}$ controls how strongly the discrete signal is injected at each position. It can be fixed or learned. In the learned version, a single shared vector and bias add only $d+1$ parameters.
-
-<discoloop-architecture></discoloop-architecture>
-<p class="discoloop-caption">The continuous channel keeps context and superposed information. The discrete channel supplies a cleaner identity-like direction for the next loop.</p>
 
 Both channels are needed. An embedding-only recurrence throws away information that the token distribution does not capture. A hidden-state-only recurrence preserves that information, but also preserves the representation mismatch. DiscoLoop adds the decoded embedding as a signal instead of replacing the continuous state with it.
 
@@ -337,5 +322,3 @@ Reasoning over parametric knowledge is not only about storing the right facts or
 - Ye, J., Yao, Z., Huang, Z., et al. (2025). [How do Transformers Learn Implicit Reasoning?](https://arxiv.org/abs/2505.23653).
 - Allen-Zhu, Z., & Li, Y. (2023). [Physics of Language Models: Part 3.2, Knowledge Manipulation](https://arxiv.org/abs/2309.14402).
 - Biran, E., Gottesman, D., Yang, S., et al. (2024). [Hopping Too Late: Exploring the Limitations of Large Language Models on Multi-Hop Queries](https://arxiv.org/abs/2406.12775).
-
-<script type="module" src="/assets/js/discoloop-animations.js"></script>
