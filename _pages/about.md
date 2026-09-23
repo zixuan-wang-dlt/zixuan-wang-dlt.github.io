@@ -19,7 +19,7 @@ redirect_from:
 
 <p>I did my undergraduate study at the Institute for Interdisciplinary Information Sciences (IIIS), Tsinghua University, also known as <strong>Yao Class</strong>.</p>
 
-<p>You can contact me at wangzx (at) princeton (dot) edu. My <a href="https://drive.google.com/file/d/1rqGAPJGkswxo4RWdz4DN4GxnNItJiIE4/view?usp=sharing">CV</a> is here.</p>
+<p>You can contact me at wangzx (at) princeton (dot) edu. My <a href="{{ '/files/Zixuan_Wang_CV.pdf' | relative_url }}">CV</a> is here.</p>
 </div>
 <img class="home-hero__photo" src="/images/WZX2.jpg" alt="Zixuan Wang">
 </div>
